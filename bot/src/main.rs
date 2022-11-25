@@ -2,6 +2,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use serenity::model::channel::ReactionType;
 
 struct Handler;
 
@@ -11,6 +12,13 @@ impl EventHandler for Handler {
 		if msg.content == "!ping" {
 			if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
 				println!("Error sending message: {:?}", why);
+			}
+		}
+		if msg.author.bot && msg.author.name == "KavaBot" && msg.content.contains("react") {
+			for emoji in ["✅", "❎", "❤️"] {
+				if let Err(why) = msg.react(&ctx.http, ReactionType::Unicode(String::from(emoji))).await {
+					println!("Error reacting to message: {:?}", why)
+				};
 			}
 		}
 	}

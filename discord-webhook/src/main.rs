@@ -3,7 +3,7 @@ use std::collections::HashMap;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let mut map = HashMap::new();
 	map.insert("username", "KavaBot");
-	map.insert("content", "test");
+	map.insert("content", "react test");
 
 	dotenv::dotenv().ok();
 	let webhook_url =
