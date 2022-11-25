@@ -1,0 +1,8 @@
+[default]
+address = "45.79.208.249"
+port = 443
+limits = { form = "64 kB", json = "1 MiB" }
+
+[default.tls]
+certs = "/etc/letsencrypt/live/kava.elg.gg/fullchain.pem"
+key = "/etc/letsencrypt/live/kava.elg.gg/privkey.pem"
