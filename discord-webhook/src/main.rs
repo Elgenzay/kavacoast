@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	map.insert("username", "KavaBot");
 	map.insert("content", "react test");
 
-	dotenv::dotenv().ok();
+	dotenvy::dotenv().ok();
 	let webhook_url =
 		std::env::var("WEBHOOK_URL").expect("Missing environment variable: WEBHOOK_URL");
 	let icon_url = std::env::var("ICON_URL").expect("Missing environment variable: ICON_URL");
