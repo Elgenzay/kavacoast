@@ -3,128 +3,18 @@
 
 <head>
 	<title>Kava Crew</title>
-	<style>
-		html,
-		body {
-			margin: 0;
-			padding: 0;
-			height: 100%;
-			width: 100%;
-		}
-
-		@font-face {
-			font-family: Roboto;
-			src: url("./Roboto-Regular.ttf");
-		}
-
-		body {
-			font-family: Roboto;
-			background-color: #0a0a0a;
-			color: #e6e6e6;
-		}
-
-		#square {
-			text-align: center;
-			height: 100%;
-			line-height: 25px;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-		}
-
-		#title {
-			font-size: 1.5em;
-			letter-spacing: 4px;
-			width: 300px;
-		}
-
-		#title>span {
-			opacity: 0;
-		}
-
-		.flexbox {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 100%;
-		}
-
-		a {
-			color: #1F8974;
-			text-decoration: none;
-		}
-
-		a:hover {
-			color: #ffffff;
-		}
-
-		.links {
-			text-align: right;
-			letter-spacing: 2px;
-			height: 0;
-			overflow: visible;
-			width: 100%;
-		}
-
-		.join-button a img {
-			border-radius: 60px;
-			transition: border-radius 500ms;
-		}
-
-		.join-button a:hover img {
-			border-radius: 35px;
-			transition: border-radius 500ms;
-		}
-
-		.join-button {
-			margin: 40px;
-			height: 100px;
-		}
-
-		#direct_invite_link {
-			background-color: black;
-			color: white;
-			text-align: center;
-			min-width: 0px;
-			height: 30px;
-			display: flex;
-			font-size: 16px;
-			font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-		}
-
-		#copy_button {
-			opacity: 75%;
-			display: flex;
-			padding-left: 10px;
-		}
-
-		#copy_button:hover {
-			opacity: 1;
-			cursor: pointer;
-		}
-
-		#direct_invite_container {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
-		p {
-			margin: 50px;
-		}
-
-	</style>
+	<link rel="stylesheet" href="./style.css">
+	<script src="./main.js"></script>
 </head>
 
-<body>
+<body onload="new ElementFadeIn(document.getElementById('title'), true)">
 	<div class="flexbox">
 		<div id="square">
 			<div class="links">
 				<a href="https://github.com/Elgenzay/kava.elg.gg">github</a>
 			</div>
 
-			<div id="title">Kava Crew</div>
+			<div id="title" display="none">Kava Crew</div>
 			<div class="join-button">
 				<a href="/join">
 					<img src="/icon.png">
@@ -147,86 +37,6 @@
 				</div>
 			</div>
 		</div>
-
-		<script>
-			class ElementFadeIn {
-
-				constructor(parent, isText = false, duration_seconds = 1) {
-					this.frame_rate = 16;
-					this.parent = parent;
-					this.isText = isText;
-					this.elements = [];
-					this.animating_elements = [];
-					this.tmp_elements = [];
-					if (isText) {
-						let chars = parent.innerHTML.split("");
-						this.text = parent.innerHTML;
-						parent.innerHTML = "";
-						for (let char of chars) {
-							let span = document.createElement("span");
-							span.innerHTML = char;
-							parent.appendChild(span);
-						}
-					}
-					let children = parent.children;
-					this.cycle_rate = (duration_seconds * 1000) / (children.length - 1);
-					for (let i in this.parent.children) {
-						if (isNaN(i)) {
-							continue;
-						}
-						this.elements.push(this.parent.children[i]);
-						this.tmp_elements.push(
-							{
-								index: i,
-								opacity: 0
-							}
-						);
-					}
-					this.animate();
-					this.cycle();
-				}
-
-				animate() {
-					let finished = true;
-					for (let char of this.animating_elements) {
-						if (char["opacity"] != 1) {
-							finished = false;
-							char["opacity"] += 0.01;
-							if (char["opacity"] > 1) {
-								char["opacity"] = 1;
-							}
-							this.elements[char["index"]].style.opacity = char["opacity"];
-						}
-					}
-					if (!finished || this.tmp_elements.length != 0) {
-						setTimeout(this.animate.bind(this), this.frame_rate);
-					} else {
-						this.parent.innerHTML = this.text;
-					}
-				}
-
-				cycle() {
-					let finished = true;
-					if (this.tmp_elements.length > 0) {
-						let i = Math.floor(Math.random() * this.tmp_elements.length);
-						this.animating_elements.push(this.tmp_elements[i]);
-						this.tmp_elements.splice(i, 1);
-						finished = false;
-					}
-					if (!finished) {
-						setTimeout(this.cycle.bind(this), this.cycle_rate);
-					}
-				}
-
-			}
-
-			function copy() {
-				document.getElementById("direct_invite_link").select();
-				document.execCommand("copy");
-			}
-
-			var title = new ElementFadeIn(document.getElementById("title"), true);
-		</script>
 	</div>
 </body>
 
