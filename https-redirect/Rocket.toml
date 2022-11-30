@@ -1,0 +1,4 @@
+[default]
+address = "45.79.208.249"
+port = 80
+limits = { form = "64 kB", json = "1 MiB" }
