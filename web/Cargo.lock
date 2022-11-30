@@ -2090,20 +2090,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rest-api"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "dotenvy",
- "mysql",
- "password-hash",
- "pbkdf2",
- "rocket 0.5.0-rc.2",
- "rocket_contrib",
- "scrypt",
-]
-
-[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3139,6 +3125,20 @@ name = "wasm-bindgen-shared"
 version = "0.2.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c38c045535d93ec4f0b4defec448e4291638ee608530863b1e2ba115d4fff7f"
+
+[[package]]
+name = "web"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "dotenvy",
+ "mysql",
+ "password-hash",
+ "pbkdf2",
+ "rocket 0.5.0-rc.2",
+ "rocket_contrib",
+ "scrypt",
+]
 
 [[package]]
 name = "web-sys"
