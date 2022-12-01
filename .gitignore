@@ -1,3 +1,5 @@
 target/
 .env
 /sh/run-*
+/tls/fullchain.pem
+/tls/privkey.pem
