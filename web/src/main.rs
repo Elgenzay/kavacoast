@@ -1,15 +1,19 @@
 use std::path::{Path, PathBuf};
+use std::result::Result;
 
 use mysql::prelude::*;
 use mysql::*;
 
-use rocket::data::FromData;
 use rocket::fs::{relative, NamedFile};
+use rocket::response::content::RawJson;
 use rocket::serde::{json::Json, Deserialize};
 
-use argon2::Argon2;
-use pbkdf2::Pbkdf2;
-use scrypt::Scrypt;
+use argon2::{
+	password_hash::{
+		rand_core::OsRng, PasswordHashString, PasswordHasher, PasswordVerifier, SaltString,
+	},
+	Argon2,
+};
 
 #[rocket::get("/<path..>")]
 pub async fn static_pages(path: PathBuf) -> Option<NamedFile> {
@@ -20,11 +24,6 @@ pub async fn static_pages(path: PathBuf) -> Option<NamedFile> {
 	NamedFile::open(path).await.ok()
 }
 
-#[rocket::get("/api")]
-fn api() -> &'static str {
-	"!test"
-}
-
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct Credentials {
@@ -32,58 +31,119 @@ struct Credentials {
 	password: String,
 }
 
+impl Credentials {
+	fn authenticate(&self) -> Result<Bartender, String> {
+		let bartender = Bartender::find(&self.username)?;
+		if bartender.hash == "0" {
+			return Ok(bartender);
+		}
+		let passwordhashstring = match PasswordHashString::new(&bartender.hash) {
+			Ok(v) => v,
+			Err(e) => return Err(e.to_string()),
+		};
+		let passwordhash = passwordhashstring.password_hash();
+		let matches = Argon2::default().verify_password(&self.password.as_bytes(), &passwordhash);
+		match matches {
+			Ok(_) => Ok(bartender),
+			Err(e) => Err(e.to_string()),
+		}
+	}
+}
+
+#[derive(Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct ChangePassRequest {
+	verify: Credentials,
+	new_pass: String,
+}
+
 struct Bartender {
 	name: String,
 	hash: String,
-	salt: String,
+}
+
+impl Bartender {
+	fn find(name: &String) -> Result<Bartender, String> {
+		let bartenders = get_bartenders()?;
+		for bt in bartenders {
+			if name == &bt.name {
+				return Ok(bt);
+			}
+		}
+		Err("Name not found".to_owned())
+	}
+
+	fn update_hash(&self, hash: &str) -> Result<(), String> {
+		let mut conn = get_mysql_connection()?;
+		let result: Result<Vec<_>, mysql::Error> = conn.exec::<String, &str, (&str, &str)>(
+			&"UPDATE kava.`bartenders` SET `hash`=? WHERE `name`=?;".to_owned(),
+			(hash, &self.name[..]),
+		);
+		match result {
+			Ok(_) => Ok(()),
+			Err(e) => Err(format!("MySQL error: \"{}\"", e)),
+		}
+	}
+}
+
+#[rocket::post(
+	"/api/change_password",
+	format = "application/json",
+	data = "<request>"
+)]
+fn change_password(request: Json<ChangePassRequest>) -> RawJson<String> {
+	let result = |request: Json<ChangePassRequest>| -> Result<(), String> {
+		let bartender = request.verify.authenticate()?;
+		let salt = SaltString::generate(&mut OsRng);
+		let p_bytes = request.new_pass.as_bytes();
+		let password_hash = match Argon2::default().hash_password(p_bytes, &salt) {
+			Ok(v) => v,
+			Err(e) => return Err(e.to_string()),
+		};
+		bartender.update_hash(&password_hash.serialize().to_string())
+	};
+	match result(request) {
+		Ok(_) => RawJson("{\"success\":true}".to_owned()),
+		Err(e) => return RawJson(format!("{{\"error\":\"{}\"}}", e)),
+	}
 }
 
 #[rocket::post("/api/auth", format = "application/json", data = "<input_creds>")]
-fn auth(input_creds: Json<Credentials>) -> &'static str {
-	let sql_result = get_bartenders();
-	match sql_result {
-		Ok(_) => (),
-		Err(e) => {
-			println!("error");
-			return "error";
-		}
+fn auth(input_creds: Json<Credentials>) -> RawJson<String> {
+	match input_creds.authenticate() {
+		Ok(_) => RawJson("{\"success\":true}".to_owned()),
+		Err(e) => RawJson(format!("{{\"error\":\"{}\"}}", e)),
 	}
-	let bartenders = sql_result.unwrap();
-	for tender in bartenders {
-		if input_creds.username == tender.name {
-			return "match";
-		}
-	}
-
-	"no match"
-
-	/*
-	if input_creds.username == "test" {
-		"Y"
-	} else {
-		"N"
-	}
-	*/
 }
 
-fn get_bartenders() -> std::result::Result<Vec<Bartender>, Box<dyn std::error::Error>> {
+fn get_bartenders() -> Result<Vec<Bartender>, String> {
 	dotenvy::dotenv().ok();
+	let mut conn = get_mysql_connection()?;
+	let selected_bartenders_result = conn
+		.query_map("SELECT name, hash from bartenders", |(name, hash)| {
+			Bartender { name, hash }
+		});
+	match selected_bartenders_result {
+		Ok(v) => Ok(v),
+		Err(e) => Err(e.to_string()),
+	}
+}
+
+fn get_mysql_connection() -> Result<PooledConn, String> {
 	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
 	let url: &str =
 		&(String::from("mysql://mysql:") + &pass + &String::from("@localhost:3306/kava"))[..];
-	let pool = Pool::new(url)?;
-	let mut conn = pool.get_conn()?;
-	let selected_bartenders = conn.query_map(
-		"SELECT name, hash, salt from bartenders",
-		|(name, hash, salt)| Bartender { name, hash, salt },
-	)?;
-	Ok(selected_bartenders)
+	let pool = match Pool::new(url) {
+		Ok(v) => v,
+		Err(e) => return Err(e.to_string()),
+	};
+	match pool.get_conn() {
+		Ok(v) => Ok(v),
+		Err(e) => Err(e.to_string()),
+	}
 }
 
 #[rocket::launch]
 fn rocket() -> _ {
-	rocket::build()
-		.mount("/", rocket::routes![static_pages])
-		.mount("/", rocket::routes![api])
-		.mount("/", rocket::routes![auth])
+	rocket::build().mount("/", rocket::routes![static_pages, auth, change_password])
 }
