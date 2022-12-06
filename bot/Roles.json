@@ -1,0 +1,44 @@
+{
+	"react_role_groups": [
+		{
+			"message_id": 123,
+			"mutually_exclusive": true,
+			"roles": [
+				{
+					"emoji": "🔴",
+					"role_id": 123
+				},
+				{
+					"emoji": "🟢",
+					"role_id": 123
+				},
+				{
+					"emoji": "🔵",
+					"role_id": 123
+				}
+			]
+		},
+		{
+			"message_id": 123,
+			"mutually_exclusive": false,
+			"roles": [
+				{
+					"emoji": "♠️",
+					"role_id": 123
+				},
+				{
+					"emoji": "♣️",
+					"role_id": 123
+				},
+				{
+					"emoji": "♥️",
+					"role_id": 123
+				},
+				{
+					"emoji": "♦️",
+					"role_id": 123
+				}
+			]
+		}
+	]
+}
