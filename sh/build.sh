@@ -2,7 +2,7 @@
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 cd "$parent_path"
-cd ./web
+cd ../web
 cargo build
 cd ../https-redirect
 cargo build
