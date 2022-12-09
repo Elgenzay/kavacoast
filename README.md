@@ -42,8 +42,8 @@ CREATE TABLE kava.`bartenders` (
 ```
 Password here should be the same as the `MYSQL_PASS` value in `/kava/.env` in the next step:
 ```
-CREATE USER 'mysql'@'%' IDENTIFIED BY '{MYSQL_PASS}';
-GRANT ALL PRIVILEGES ON kava.* TO 'mysql'@'%';
+CREATE USER 'kava'@'%' IDENTIFIED BY '{MYSQL_PASS}';
+GRANT ALL PRIVILEGES ON kava.* TO 'kava'@'%';
 ```
 
 ### Set environment variables

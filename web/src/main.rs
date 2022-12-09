@@ -132,7 +132,7 @@ fn get_bartenders() -> Result<Vec<Bartender>, String> {
 fn get_mysql_connection() -> Result<PooledConn, String> {
 	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
 	let url: &str =
-		&(String::from("mysql://mysql:") + &pass + &String::from("@localhost:3306/kava"))[..];
+		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
 	let pool = match Pool::new(url) {
 		Ok(v) => v,
 		Err(e) => return Err(e.to_string()),
