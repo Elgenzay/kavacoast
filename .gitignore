@@ -3,3 +3,4 @@ target/
 /sh/run-*
 /tls/fullchain.pem
 /tls/privkey.pem
+/bot/BotConfig.json

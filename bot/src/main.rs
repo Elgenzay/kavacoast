@@ -178,8 +178,8 @@ async fn get_state(ctx: &Context) -> BotState {
 	let mut data = ctx.data.write().await;
 	let config = data.get_mut::<BotData>().unwrap();
 	config.initialized = true;
-	let json_str = fs::read_to_string("Roles.json").expect("Error reading Roles.json");
-	config.data = serde_json::from_str(&json_str).expect("Error parsing Roles.json");
+	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
+	config.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
 	config.clone()
 }
 
