@@ -3,5 +3,5 @@ port = 443
 limits = { form = "64 kB", json = "1 MiB" }
 
 [default.tls]
-certs = "/kava/tls/fullchain.pem"
-key = "/kava/tls/privkey.pem"
+certs = "../tls/fullchain.pem"
+key = "../tls/privkey.pem"
