@@ -9,7 +9,6 @@ edition = "2021"
 	tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
 	serenity = { default-features = false, features = ["client", "gateway", "model", "rustls_backend", "cache", "http"], version = "0.11.5"}
 	dotenv = "0.15.0"
-	typemap = "0.3.3"
 	toml = "0.5.9"
 	serde = "1.0.149"
 	serde_json = "1.0"
