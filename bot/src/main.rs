@@ -1,15 +1,13 @@
 use serenity::async_trait;
+use serenity::client::bridge::gateway::ShardManager;
 use serenity::model::channel::{Message, Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
-use serenity::model::prelude::RoleId;
+use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId};
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
 
-use serenity::client::bridge::gateway::ShardManager;
-
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serenity::prelude::Mutex;
 use std::fs;
 use std::sync::Arc;
@@ -38,6 +36,8 @@ impl BotState {
 			initialized: false,
 			data: JsonData {
 				react_role_groups: Vec::new(),
+				error_channel_id: 0,
+				guild_id: 0,
 			},
 		}
 	}
@@ -46,6 +46,8 @@ impl BotState {
 #[derive(Serialize, Deserialize, Clone)]
 struct JsonData {
 	react_role_groups: Vec<ReactRoleGroup>,
+	error_channel_id: u64,
+	guild_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -68,17 +70,21 @@ impl EventHandler for Handler {
 	async fn message(&self, ctx: Context, msg: Message) {
 		get_state(&ctx).await;
 		if msg.content == "!ping" {
-			if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
-				println!("Error sending message: {:?}", why);
+			if let Err(e) = msg.channel_id.say(&ctx.http, "Pong!").await {
+				log_error(
+					&ctx,
+					format!("Error responding to !ping: {}", e.to_string()),
+				)
+				.await;
 			}
 		}
 		if msg.author.bot && msg.author.name == "KavaBot" && msg.content.contains("react") {
 			for emoji in ["✅", "❎", "❤️"] {
-				if let Err(why) = msg
+				if let Err(e) = msg
 					.react(&ctx.http, ReactionType::Unicode(String::from(emoji)))
 					.await
 				{
-					println!("Error reacting to message: {:?}", why)
+					log_error(&ctx, format!("Error reacting to message: {}", e)).await;
 				};
 			}
 		}
@@ -100,7 +106,7 @@ impl EventHandler for Handler {
 async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 	let result =
 		async {
-			let groups = get_state(&ctx).await.data.react_role_groups;
+			let groups = get_state(&ctx).await.react_role_groups;
 			let msg_id = react.message_id.as_u64();
 			let mut match_group_opt = None;
 			for group in groups {
@@ -164,15 +170,19 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 		}
 		.await;
 	if result.is_err() {
-		println!("Error: {}", result.err().unwrap());
+		log_error(
+			&ctx,
+			format!("Error on reaction update: {}", result.err().unwrap()),
+		)
+		.await;
 	}
 }
 
-async fn get_state(ctx: &Context) -> BotState {
+async fn get_state(ctx: &Context) -> JsonData {
 	let data = ctx.data.read().await;
 	let config = data.get::<BotData>().unwrap();
 	if config.initialized {
-		return config.clone();
+		return config.clone().data;
 	}
 	std::mem::drop(data);
 	let mut data = ctx.data.write().await;
@@ -180,7 +190,29 @@ async fn get_state(ctx: &Context) -> BotState {
 	config.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
 	config.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
-	config.clone()
+	config.clone().data
+}
+
+async fn log_error(ctx: &Context, error_message: String) {
+	let state = get_state(ctx).await;
+	let channel_result = GuildChannel::convert(
+		ctx,
+		Some(GuildId::from(state.guild_id)),
+		Some(ChannelId::from(state.error_channel_id)),
+		&state.error_channel_id.to_string()[..],
+	)
+	.await;
+	let channel = match channel_result {
+		Ok(v) => v,
+		Err(_e) => {
+			println!("Error channel not found. Error message: {}", error_message);
+			return;
+		}
+	};
+	match channel.say(&ctx.http, error_message).await {
+		Ok(_) => (),
+		Err(e) => println!("Error: {}", e.to_string()),
+	};
 }
 
 #[tokio::main]
@@ -194,8 +226,8 @@ async fn main() {
 		.event_handler(Handler)
 		.type_map_insert::<BotData>(BotState::new())
 		.await
-		.expect("Err creating client");
-	if let Err(why) = client.start().await {
-		println!("Client error: {:?}", why);
+		.expect("Error creating client");
+	if let Err(e) = client.start().await {
+		println!("Client error: {}", e.to_string());
 	}
 }
