@@ -7,6 +7,9 @@ use mysql::*;
 use rocket::fs::{relative, NamedFile};
 use rocket::response::content::RawJson;
 use rocket::serde::{json::Json, Deserialize};
+use rocket::shield::Hsts;
+use rocket::shield::Shield;
+use rocket::time::Duration;
 
 use argon2::{
 	password_hash::{
@@ -145,5 +148,7 @@ fn get_mysql_connection() -> Result<PooledConn, String> {
 
 #[rocket::launch]
 fn rocket() -> _ {
-	rocket::build().mount("/", rocket::routes![static_pages, auth, change_password])
+	rocket::build()
+		.mount("/", rocket::routes![static_pages, auth, change_password])
+		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))
 }
