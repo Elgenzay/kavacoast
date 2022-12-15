@@ -3,7 +3,7 @@ use serenity::client::bridge::gateway::ShardManager;
 use serenity::model::channel::{Message, Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
-use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId, UserId};
+use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId};
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
 
@@ -38,7 +38,6 @@ impl BotState {
 				react_role_groups: Vec::new(),
 				error_channel_id: 0,
 				guild_id: 0,
-				admin_ids: vec![],
 			},
 		}
 	}
@@ -49,7 +48,6 @@ struct JsonData {
 	react_role_groups: Vec<ReactRoleGroup>,
 	error_channel_id: u64,
 	guild_id: u64,
-	admin_ids: Vec<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -71,7 +69,7 @@ struct Handler;
 impl EventHandler for Handler {
 	async fn message(&self, ctx: Context, msg: Message) {
 		get_state(&ctx).await;
-		if msg.content == "!ping" && is_admin(&ctx, msg.author.id).await {
+		if msg.content == "!ping" {
 			if let Err(e) = msg.channel_id.say(&ctx.http, "Pong!").await {
 				log_error(
 					&ctx,
@@ -105,20 +103,10 @@ impl EventHandler for Handler {
 	}
 }
 
-async fn is_admin(ctx: &Context, user_id: UserId) -> bool {
-	let admin_ids = get_state(&ctx).await.data.admin_ids;
-	for admin_id in admin_ids {
-		if user_id.as_u64() == &admin_id {
-			return true;
-		}
-	}
-	false
-}
-
 async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 	let result =
 		async {
-			let groups = get_state(&ctx).await.data.react_role_groups;
+			let groups = get_state(&ctx).await.react_role_groups;
 			let msg_id = react.message_id.as_u64();
 			let mut match_group_opt = None;
 			for group in groups {
@@ -190,34 +178,28 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 	}
 }
 
-async fn get_state(ctx: &Context) -> BotState {
+async fn get_state(ctx: &Context) -> JsonData {
 	let data = ctx.data.read().await;
-	let state = data.get::<BotData>().unwrap();
-	if state.initialized {
-		return state.clone();
+	let config = data.get::<BotData>().unwrap();
+	if config.initialized {
+		return config.clone().data;
 	}
 	std::mem::drop(data);
 	let mut data = ctx.data.write().await;
-	let state = data.get_mut::<BotData>().unwrap();
-	state.initialized = true;
+	let config = data.get_mut::<BotData>().unwrap();
+	config.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
-	state.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
-	state.clone()
-}
-
-async fn overwrite_state(ctx: &Context, new_state: BotState) {
-	let mut data = ctx.data.write().await;
-	let state = data.get_mut::<BotData>().unwrap();
-	*state = new_state;
+	config.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
+	config.clone().data
 }
 
 async fn log_error(ctx: &Context, error_message: String) {
 	let state = get_state(ctx).await;
 	let channel_result = GuildChannel::convert(
 		ctx,
-		Some(GuildId::from(state.data.guild_id)),
-		Some(ChannelId::from(state.data.error_channel_id)),
-		&state.data.error_channel_id.to_string()[..],
+		Some(GuildId::from(state.guild_id)),
+		Some(ChannelId::from(state.error_channel_id)),
+		&state.error_channel_id.to_string()[..],
 	)
 	.await;
 	let channel = match channel_result {
