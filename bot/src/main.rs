@@ -1,14 +1,19 @@
+mod cmds;
+
+use serde::{Deserialize, Serialize};
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
+use serenity::framework::standard::macros::{command, group};
+use serenity::framework::standard::{CommandResult, StandardFramework};
 use serenity::model::channel::{Message, Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
+use serenity::model::prelude::command::Command;
+use serenity::model::prelude::interaction::{Interaction, InteractionResponseType};
 use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId};
+use serenity::prelude::Mutex;
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
-
-use serde::{Deserialize, Serialize};
-use serenity::prelude::Mutex;
 use std::fs;
 use std::sync::Arc;
 
@@ -63,21 +68,43 @@ struct ReactRole {
 	role_id: u64,
 }
 
+#[group]
+#[commands(ping)]
+struct General;
+
 struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-	async fn message(&self, ctx: Context, msg: Message) {
-		get_state(&ctx).await;
-		if msg.content == "!ping" {
-			if let Err(e) = msg.channel_id.say(&ctx.http, "Pong!").await {
+	async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+		if let Interaction::ApplicationCommand(command) = interaction {
+			let content = match command.data.name.as_str() {
+				"ping" => cmds::ping::run(&command.data.options),
+				_ => "".to_string(),
+			};
+			if let Err(e) = command
+				.create_interaction_response(&ctx.http, |response| {
+					response
+						.kind(InteractionResponseType::ChannelMessageWithSource)
+						.interaction_response_data(|message| message.content(content))
+				})
+				.await
+			{
 				log_error(
 					&ctx,
-					format!("Error responding to !ping: {}", e.to_string()),
+					format!(
+						"Error responding to command /{}: {}",
+						command.data.name.as_str(),
+						e
+					),
 				)
 				.await;
 			}
 		}
+	}
+
+	async fn message(&self, ctx: Context, msg: Message) {
+		get_state(&ctx).await;
 		if msg.author.bot && msg.author.name == "KavaBot" && msg.content.contains("react") {
 			for emoji in ["✅", "❎", "❤️"] {
 				if let Err(e) = msg
@@ -98,7 +125,15 @@ impl EventHandler for Handler {
 		reaction_update(ctx, react, false).await;
 	}
 
-	async fn ready(&self, _ctx: Context, ready: Ready) {
+	async fn ready(&self, ctx: Context, ready: Ready) {
+		let cmd_register = Command::create_global_application_command(&ctx.http, |command| {
+			cmds::ping::register(command)
+		})
+		.await;
+		if let Err(e) = cmd_register {
+			log_error(&ctx, e.to_string()).await;
+			panic!("Error registering commands: {}", e.to_string());
+		};
 		println!("{} is connected!", ready.user.name);
 	}
 }
@@ -219,15 +254,26 @@ async fn log_error(ctx: &Context, error_message: String) {
 async fn main() {
 	dotenv::dotenv().ok();
 	let token = std::env::var("BOT_TOKEN").expect("Missing environment variable: BOT_TOKEN");
-	let intents = GatewayIntents::GUILD_MESSAGES
+	let intents = GatewayIntents::non_privileged()
+		| GatewayIntents::GUILD_MESSAGES
 		| GatewayIntents::GUILD_MESSAGE_REACTIONS
 		| GatewayIntents::MESSAGE_CONTENT;
-	let mut client = Client::builder(&token, intents)
+	let framework = StandardFramework::new()
+		.configure(|c| c.prefix("k!"))
+		.group(&GENERAL_GROUP);
+	let mut client = Client::builder(token, intents)
 		.event_handler(Handler)
+		.framework(framework)
 		.type_map_insert::<BotData>(BotState::new())
 		.await
 		.expect("Error creating client");
 	if let Err(e) = client.start().await {
 		println!("Client error: {}", e.to_string());
 	}
+}
+
+#[command]
+async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
+	msg.reply(ctx, "Pong!").await?;
+	Ok(())
 }
