@@ -1,66 +1,3 @@
-html,
-body {
-	margin: 0;
-	padding: 0;
-	height: 100%;
-	width: 100%;
-}
-
-@font-face {
-	font-family: Roboto;
-	src: url("./Roboto-Regular.ttf");
-}
-
-body {
-	font-family: Roboto;
-	background-color: #0a0a0a;
-	color: #e6e6e6;
-}
-
-#square {
-	text-align: center;
-	height: 100%;
-	line-height: 25px;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-}
-
-#title {
-	font-size: 1.5em;
-	letter-spacing: 4px;
-	width: 300px;
-}
-
-#title>span {
-	opacity: 0;
-}
-
-.flexbox {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 100%;
-}
-
-a {
-	color: #1F8974;
-	text-decoration: none;
-}
-
-a:hover {
-	color: #ffffff;
-}
-
-.links {
-	text-align: right;
-	letter-spacing: 2px;
-	height: 0;
-	overflow: visible;
-	width: 100%;
-}
-
 .join-button a img {
 	border-radius: 60px;
 	transition: border-radius 500ms;
@@ -102,8 +39,4 @@ a:hover {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-}
-
-p {
-	margin: 50px;
 }

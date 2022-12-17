@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Kava Crew</title>
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/main.css">
+	<script src="/fadein.js"></script>
+</head>
+
+<body onload="new ElementFadeIn(document.getElementById('title'))">
+	<div class="flexbox">
+		<div id="width-restraint">
+			<div class="links">
+				<span>
+					<a href="https://github.com/Elgenzay/kava.elg.gg">github</a>
+				</span>
+				<span>
+					<a href="/">home</a>
+				</span>
+			</div>
+			<div id="title" data-fadein="Login"></div>
+			<div class="main-content">
+				<div style="margin: 50px">
+					<p>If you're a bartender, you can log in to update your schedule here.</p>
+				</div>
+				<form id="form">
+					<div style="display: flex; justify-content: center;">
+						<div style="display: flex; flex-direction: column; align-items: center;">
+							<div style=" display: flex; margin-bottom: 10px;">
+								<div style="width: 100px;"><label for="username">Username</label></div>
+								<div><input type="text" id="username" name="username" required></div>
+							</div>
+							<div style="display: flex;">
+								<div style="width: 100px;"><label for="password">Password</label></div>
+								<div><input type="password" id="password" name="password" required></div>
+							</div>
+						</div>
+						<div style="display: flex; align-items: center; margin: 10px;">
+							<button type="submit">Sign in</button>
+						</div>
+					</div>
+				</form>
+				<div id="error" style="color:crimson">
+				</div>
+				<script>
+
+					document.getElementById("form").addEventListener("submit", function (event) {
+						event.preventDefault();
+						let data = {
+							"username": document.getElementById("username").value,
+							"password": document.getElementById("password").value
+						};
+						post('/api/auth', JSON.stringify(data)).then(function (e) {
+							if (e.target.status < 200 || e.target.status >= 300) {
+								try {
+									let response = JSON.parse(e.target.responseText);
+									if ("error" in response) {
+										error(response["error"]);
+									} else {
+										error("Unexpected response error");
+									}
+								} catch (f) {
+									error("Unexpected error: " + e.target.status);
+								}
+							} else {
+								console.log("success");
+								let response_obj = JSON.parse(e.target.responseText);
+								console.log(response_obj);
+								// todo: return appropriate error codes on failure
+								if (response_obj["error"]) {
+									error(response_obj["error"]);
+								}
+							}
+						}, function (e) {
+							error("Unexpected network error.");
+						});
+
+					});
+
+					function error(desc) {
+						document.getElementById("username").style.border = "2px solid red";
+						document.getElementById("password").style.border = "2px solid red";
+						document.getElementById("error").innerText = desc;
+					}
+
+					function post(url, body) {
+						return new Promise(function (resolve, reject) {
+							var xhr = new XMLHttpRequest();
+							xhr.open("POST", url);
+							xhr.setRequestHeader('Content-type', 'application/json');
+							xhr.onload = resolve;
+							xhr.onerror = reject;
+							xhr.send(body);
+						});
+					}
+
+				</script>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

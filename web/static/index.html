@@ -1,27 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+	<meta charset="UTF-8">
 	<title>Kava Crew</title>
 	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="./main.css">
 	<link rel="stylesheet" href="./style.css">
-	<script src="./main.js"></script>
+	<script src="./copy.js"></script>
+	<script src="./fadein.js"></script>
 </head>
 
-<body onload="new ElementFadeIn(document.getElementById('title'), true)">
+<body onload="new ElementFadeIn(document.getElementById('title'))">
 	<div class="flexbox">
-		<div id="square">
+		<div id="width-restraint">
 			<div class="links">
-				<a href="https://github.com/Elgenzay/kava.elg.gg">github</a>
+				<span>
+					<a href="https://github.com/Elgenzay/kava.elg.gg">github</a>
+				</span>
+				<span>
+					<a href="/login">login</a>
+				</span>
 			</div>
 
-			<div id="title" display="none">Kava Crew</div>
+			<div id="title" data-fadein="Kava Crew"></div>
 			<div class="join-button">
 				<a href="/join">
 					<img src="/icon.png">
 				</a>
 			</div>
-			<div>
+			<div class="main-content">
 				<p>
 					We're a Discord server for the communities of the kava bars of the Miami metropolitan area.
 					<br>

@@ -1,0 +1,68 @@
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	width: 100%;
+}
+
+.flexbox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+}
+
+#width-restraint {
+	text-align: center;
+	height: 100%;
+	min-width: 300px;
+	line-height: 25px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+#title {
+	font-size: 1.5em;
+	letter-spacing: 4px;
+	width: 300px;
+}
+
+@font-face {
+	font-family: Roboto;
+	src: url("/Roboto-Regular.ttf");
+}
+
+body {
+	font-family: Roboto;
+	background-color: #0a0a0a;
+	color: #e6e6e6;
+}
+
+a {
+	color: #1F8974;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #ffffff;
+}
+
+.links {
+	text-align: right;
+	letter-spacing: 2px;
+	height: 0;
+	overflow: visible;
+	width: 100%;
+	display: grid;
+}
+
+.links span {
+	z-index: 100;
+}
+
+.main-content>* {
+	margin: 30px;
+}

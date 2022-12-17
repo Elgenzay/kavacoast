@@ -1,21 +1,18 @@
 class ElementFadeIn {
 
-	constructor(parent, isText = false, duration_seconds = 1) {
+	constructor(parent, duration_seconds = 1) {
 		this.frame_rate = 16;
 		this.parent = parent;
-		this.isText = isText;
 		this.elements = [];
 		this.animating_elements = [];
 		this.tmp_elements = [];
-		if (isText) {
-			let chars = parent.innerHTML.split("");
-			this.text = parent.innerHTML;
-			parent.innerHTML = "";
-			for (let char of chars) {
-				let span = document.createElement("span");
-				span.innerHTML = char;
-				parent.appendChild(span);
-			}
+		this.text = parent.getAttribute("data-fadein");
+		let chars = this.text.split("");
+		for (let char of chars) {
+			let span = document.createElement("span");
+			span.style.opacity = 0;
+			span.innerHTML = char;
+			parent.appendChild(span);
 		}
 		let children = parent.children;
 		this.cycle_rate = (duration_seconds * 1000) / (children.length - 1);
@@ -67,9 +64,4 @@ class ElementFadeIn {
 		}
 	}
 
-}
-
-function copy() {
-	document.getElementById("direct_invite_link").select();
-	document.execCommand("copy");
 }
