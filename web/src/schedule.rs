@@ -6,7 +6,7 @@ use rocket::response::status;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 use std::result::Result;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct Schedule {
 	week1: ScheduleWeek,
@@ -14,16 +14,23 @@ struct Schedule {
 }
 
 impl Schedule {
-	fn get_week(&self, number: i8) -> &ScheduleWeek {
+	fn empty() -> Schedule {
+		Schedule {
+			week1: ScheduleWeek::empty(),
+			week2: ScheduleWeek::empty(),
+		}
+	}
+
+	fn get_week(&mut self, number: i8) -> &mut ScheduleWeek {
 		match number {
-			1 => &self.week1,
-			2 => &self.week2,
-			_ => panic!("Invalid week"),
+			1 => &mut self.week1,
+			2 => &mut self.week2,
+			_ => panic!("Invalid week: {}", number),
 		}
 	}
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct ScheduleWeek {
 	sun: ScheduleDay,
@@ -36,47 +43,111 @@ struct ScheduleWeek {
 }
 
 impl ScheduleWeek {
-	fn get(&self, day: &str) -> &ScheduleDay {
-		match day {
-			"sun" => &self.sun,
-			"mon" => &self.mon,
-			"tue" => &self.tue,
-			"wed" => &self.wed,
-			"thu" => &self.thu,
-			"fri" => &self.fri,
-			"sat" => &self.sat,
-			_ => panic!("Invalid day"),
+	fn empty() -> ScheduleWeek {
+		ScheduleWeek {
+			sun: ScheduleDay::empty(),
+			mon: ScheduleDay::empty(),
+			tue: ScheduleDay::empty(),
+			wed: ScheduleDay::empty(),
+			thu: ScheduleDay::empty(),
+			fri: ScheduleDay::empty(),
+			sat: ScheduleDay::empty(),
+		}
+	}
+
+	fn days() -> Vec<String> {
+		vec![
+			"sun".to_string(),
+			"mon".to_string(),
+			"tue".to_string(),
+			"wed".to_string(),
+			"thu".to_string(),
+			"fri".to_string(),
+			"sat".to_string(),
+		]
+	}
+
+	fn get_day(&mut self, day: &String) -> &mut ScheduleDay {
+		match &day[..] {
+			"sun" => &mut self.sun,
+			"mon" => &mut self.mon,
+			"tue" => &mut self.tue,
+			"wed" => &mut self.wed,
+			"thu" => &mut self.thu,
+			"fri" => &mut self.fri,
+			"sat" => &mut self.sat,
+			_ => panic!("Invalid day: {}", day),
 		}
 	}
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct ScheduleDay {
 	locations: Vec<ScheduleLocation>,
 }
 
-#[derive(Deserialize)]
+impl ScheduleDay {
+	fn empty() -> ScheduleDay {
+		ScheduleDay { locations: vec![] }
+	}
+
+	fn get_location_index_by_name(&mut self, name: String) -> usize {
+		let mut i = 0;
+		for location in &mut self.locations {
+			if location.name == name {
+				return i;
+			}
+			i += 1;
+		}
+		self.locations.push(ScheduleLocation {
+			name,
+			shifts: vec![],
+		});
+		self.locations.len() - 1
+	}
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct ScheduleLocation {
 	name: String,
 	shifts: Vec<ScheduleShift>,
 }
 
-#[derive(Deserialize, Serialize)]
+impl ScheduleLocation {
+	fn get_shift_index_by_name(&mut self, name: String) -> usize {
+		let mut i = 0;
+		for shift in &mut self.shifts {
+			if shift.name == name {
+				return i;
+			}
+			i += 1;
+		}
+		self.shifts.push(ScheduleShift {
+			name,
+			bartender: "".to_string(),
+		});
+		self.shifts.len() - 1
+	}
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct ScheduleShift {
 	name: String,
 	bartender: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct SchedulePostRequest {
 	verify: super::Credentials,
 	schedule: Schedule,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(crate = "rocket::serde")]
 struct ScheduleRow {
 	location: String,
 	sun1: String,
@@ -132,13 +203,37 @@ impl ScheduleRow {
 			"thu2" => self.thu2 = val,
 			"fri2" => self.fri2 = val,
 			"sat2" => self.sat2 = val,
-			_ => panic!("Invalid day"),
+			_ => panic!("Invalid day: {}", day),
 		};
+	}
+
+	fn get_day(&self, day: &str) -> &String {
+		match day {
+			"sun1" => &self.sun1,
+			"mon1" => &self.mon1,
+			"tue1" => &self.tue1,
+			"wed1" => &self.wed1,
+			"thu1" => &self.thu1,
+			"fri1" => &self.fri1,
+			"sat1" => &self.sat1,
+			"sun2" => &self.sun2,
+			"mon2" => &self.mon2,
+			"tue2" => &self.tue2,
+			"wed2" => &self.wed2,
+			"thu2" => &self.thu2,
+			"fri2" => &self.fri2,
+			"sat2" => &self.sat2,
+			_ => panic!("Invalid day: {}", day),
+		}
 	}
 }
 
-#[rocket::post("/api/schedule", format = "application/json", data = "<request>")]
-pub fn schedule_post(request: Json<SchedulePostRequest>) -> status::Custom<RawJson<String>> {
+#[rocket::put(
+	"/api/schedule_update",
+	format = "application/json",
+	data = "<request>"
+)]
+pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<RawJson<String>> {
 	let result = |request: Json<SchedulePostRequest>| -> Result<(), (Status, String)> {
 		request.verify.authenticate()?;
 		let mut conn = super::get_mysql_connection()?;
@@ -155,8 +250,14 @@ pub fn schedule_post(request: Json<SchedulePostRequest>) -> status::Custom<RawJs
 		for loc in &locations {
 			let mut new_row = ScheduleRow::empty(loc);
 			for week_i in vec![1, 2] {
-				for day_i in vec!["sun", "mon", "tue", "wed", "thu", "fri", "sat"] {
-					for day_loc in &request.schedule.get_week(week_i).get(day_i).locations {
+				for day_i in ScheduleWeek::days() {
+					for day_loc in &request
+						.clone()
+						.schedule
+						.get_week(week_i)
+						.get_day(&day_i)
+						.locations
+					{
 						if &day_loc.name == loc {
 							let mut day_string = day_i.to_string();
 							day_string.push_str(&week_i.to_string());
@@ -202,6 +303,98 @@ pub fn schedule_post(request: Json<SchedulePostRequest>) -> status::Custom<RawJs
 	};
 	match result(request) {
 		Ok(_) => status::Custom(Status::Ok, RawJson("{\"success\":true}".to_owned())),
+		Err(e) => status::Custom(e.0, RawJson(e.1)),
+	}
+}
+
+#[rocket::post(
+	"/api/schedule_get",
+	format = "application/json",
+	data = "<input_creds>"
+)]
+pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<RawJson<String>> {
+	let result = |request: Json<super::Credentials>| -> Result<Schedule, (Status, String)> {
+		request.authenticate()?;
+		let mut conn = super::get_mysql_connection()?;
+		let week1_result = conn.query_map(
+			"SELECT location, sun1, mon1, tue1, wed1, thu1, fri1, sat1 from schedule ORDER BY `id`",
+			|(location, sun1, mon1, tue1, wed1, thu1, fri1, sat1)| {
+				(location, sun1, mon1, tue1, wed1, thu1, fri1, sat1)
+			},
+		);
+
+		let week2_result: Result<
+			Vec<(String, String, String, String, String, String, String)>,
+			Error,
+		> = conn.query_map(
+			"SELECT sun2, mon2, tue2, wed2, thu2, fri2, sat2 from schedule ORDER BY `id`",
+			|(sun2, mon2, tue2, wed2, thu2, fri2, sat2)| (sun2, mon2, tue2, wed2, thu2, fri2, sat2),
+		);
+		if week1_result.is_err() || week2_result.is_err() {
+			return Err((Status::from_code(500).unwrap(), "MySQL Error".to_string()));
+		}
+
+		let w1 = week1_result.ok().unwrap();
+		let w2 = week2_result.ok().unwrap();
+
+		let mut rows = vec![];
+		let mut i = 0;
+		for row in w1 {
+			rows.push(ScheduleRow {
+				location: row.0,
+				sun1: row.1,
+				mon1: row.2,
+				tue1: row.3,
+				wed1: row.4,
+				thu1: row.5,
+				fri1: row.6,
+				sat1: row.7,
+				sun2: w2[i].0.to_string(),
+				mon2: w2[i].1.to_string(),
+				tue2: w2[i].2.to_string(),
+				wed2: w2[i].3.to_string(),
+				thu2: w2[i].4.to_string(),
+				fri2: w2[i].5.to_string(),
+				sat2: w2[i].6.to_string(),
+			});
+			i += 1;
+		}
+		let mut schedule = Schedule::empty();
+		for row in &rows {
+			for day in ScheduleWeek::days() {
+				schedule
+					.week1
+					.get_day(&day)
+					.locations
+					.push(ScheduleLocation {
+						name: row.location.to_string(),
+						shifts: vec![],
+					})
+			}
+		}
+
+		for week_i in [1, 2] {
+			for day_i in ScheduleWeek::days() {
+				let mut day_string = day_i.to_string();
+				day_string.push_str(&week_i.to_string());
+				for row in &rows {
+					let shifts: Vec<ScheduleShift> =
+						serde_json::from_str(row.get_day(&day_string[..])).unwrap();
+					let day = schedule.get_week(week_i).get_day(&day_i);
+					let loc_i = day.get_location_index_by_name(row.location.to_string());
+					for shift in shifts {
+						let shift_i = day.locations[loc_i].get_shift_index_by_name(shift.name);
+						day.locations[loc_i].shifts[shift_i].bartender = shift.bartender;
+					}
+				}
+			}
+		}
+
+		Ok(schedule)
+	};
+
+	match result(input_creds) {
+		Ok(v) => status::Custom(Status::Ok, RawJson(serde_json::to_string(&v).unwrap())),
 		Err(e) => status::Custom(e.0, RawJson(e.1)),
 	}
 }

@@ -39,9 +39,9 @@ pub async fn join() -> Redirect {
 	Redirect::to(inv)
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(crate = "rocket::serde")]
-struct Credentials {
+pub struct Credentials {
 	username: String,
 	password: String,
 }
@@ -171,7 +171,8 @@ fn rocket() -> _ {
 				join,
 				auth,
 				change_password,
-				schedule::schedule_post
+				schedule::schedule_update,
+				schedule::schedule_get
 			],
 		)
 		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))
