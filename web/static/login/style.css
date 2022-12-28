@@ -4,9 +4,9 @@
 }
 
 .form-fields-wrapper {
+	align-items: center;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
 }
 
 .form-fields-wrapper>div {
@@ -15,8 +15,8 @@
 }
 
 .submit-wrapper {
-	display: flex;
 	align-items: center;
+	display: flex;
 	margin: 10px;
 }
 

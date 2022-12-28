@@ -5,3 +5,4 @@ Cargo.lock
 /tls/fullchain.pem
 /tls/privkey.pem
 /bot/BotConfig.json
+/web/static/resources/json/PublicData.json

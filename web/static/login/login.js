@@ -2,41 +2,27 @@ class LoginPage {
 	constructor() {
 		let login = sessionStorage.getItem("login");
 		if (login) {
-			try {
-				console.log("has login");
-				let d = JSON.parse(login);
-				let data = {
-					"username": d.u,
-					"password": atob(d.p)
-				};
-				LoginPage.post('/api/auth', JSON.stringify(data)).then(function (e) {
-					if (LoginPage.process_login_response(e)) {
-						window.location.href = "/dashboard";
-					} else {
-						LoginPage.error(e, false);
-					}
-				}, function (e) {
+			Request.post("/api/auth", login).then(function (e) {
+				if (LoginPage.process_login_response(e)) {
+					window.location.href = "/dashboard";
+				} else {
 					LoginPage.error(e, false);
-				});
-			} catch (e) {
+				}
+			}, function (e) {
 				LoginPage.error(e, false);
-			}
+			});
 		} else {
 			document.getElementById("content").style.visibility = "visible";
 		}
-
 		document.getElementById("form").addEventListener("submit", function (event) {
 			event.preventDefault();
 			let data = {
 				"username": document.getElementById("username").value,
 				"password": document.getElementById("password").value
 			};
-			LoginPage.post('/api/auth', JSON.stringify(data)).then(function (e) {
+			Request.post('/api/auth', JSON.stringify(data)).then(function (e) {
 				if (LoginPage.process_login_response(e)) {
-					sessionStorage.setItem("login", JSON.stringify({
-						"u": data.username,
-						"p": btoa(data.password)
-					}));
+					sessionStorage.setItem("login", JSON.stringify(data));
 					window.location.href = "/dashboard";
 				}
 			}, function (e) {
@@ -83,16 +69,5 @@ class LoginPage {
 		document.getElementById("username").style.border = "2px solid red";
 		document.getElementById("password").style.border = "2px solid red";
 		document.getElementById("error").innerText = desc;
-	}
-
-	static post(url, body) {
-		return new Promise(function (resolve, reject) {
-			var xhr = new XMLHttpRequest();
-			xhr.open("POST", url);
-			xhr.setRequestHeader('Content-type', 'application/json');
-			xhr.onload = resolve;
-			xhr.onerror = reject;
-			xhr.send(body);
-		});
 	}
 }

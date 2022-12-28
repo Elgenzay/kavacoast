@@ -1,0 +1,28 @@
+{
+	"shifts": [
+		{
+			"name": "night",
+			"friendly_name": "Night",
+			"description": "6pm to 2am"
+		},
+		{
+			"name": "overnight",
+			"friendly_name": "Overnight",
+			"description": "12am to 8am"
+		}
+	],
+	"locations": [
+		{
+			"name": "ftlauderdale",
+			"friendly_name": "Fort Lauderdale"
+		},
+		{
+			"name": "sunrise",
+			"friendly_name": "Sunrise"
+		},
+		{
+			"name": "coralsprings",
+			"friendly_name": "Coral Springs"
+		}
+	]
+}
