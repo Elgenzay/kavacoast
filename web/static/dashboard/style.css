@@ -1,3 +1,13 @@
 #content {
 	visibility: hidden;
 }
+
+
+td {
+	width: 150px;
+}
+
+select {
+	text-align: center;
+	width: 100%;
+}

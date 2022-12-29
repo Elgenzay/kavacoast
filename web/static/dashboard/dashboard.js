@@ -126,7 +126,7 @@ class Dashboard {
 		);
 		Request.send("/api/schedule_update", request, "PUT").then(function (e) {
 			if (e.target.status == 200) {
-				console.log("success");
+				window.location.reload();
 				return true;
 			}
 		}, function (e) {
@@ -136,7 +136,7 @@ class Dashboard {
 		});
 	}
 
-	static get_schedule() {
+	static get_schedule(overwrite = false) {
 		let request = JSON.stringify({
 			"username": window.username,
 			"password": window.password
@@ -144,7 +144,17 @@ class Dashboard {
 		Request.post("/api/schedule_get", request).then(function (e) {
 			if (e.target.status == 200) {
 				console.log(JSON.parse(e.target.response));
-				window.scheduledata = JSON.parse(e.target.response);
+				if (window.scheduledata_initialstr) {
+					if (window.scheduledata_initialstr !== e.target.response) {
+						window.alert("Data has changed since page load. Someone else may have modified the schedule. Try again.");
+						window.location.reload();
+					} else if (overwrite) {
+						Dashboard.save_schedule();
+					}
+				} else {
+					window.scheduledata = JSON.parse(e.target.response);
+					window.scheduledata_initialstr = e.target.response;
+				}
 				return true;
 			}
 		}, function (e) {
