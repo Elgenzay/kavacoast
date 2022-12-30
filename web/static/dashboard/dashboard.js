@@ -10,7 +10,7 @@ class Dashboard {
 		let tables = document.getElementById("tables");
 		for (let week in window.scheduledata) {
 			let table_label = document.createElement("div");
-			table_label.innerText = week == 1 ? "This week" : "Next week";
+			table_label.innerText = week == "week1" ? "This week" : "Next week";
 			tables.appendChild(table_label);
 			let table = document.createElement("table");
 			let labels = document.createElement("tr");
