@@ -1,3 +1,4 @@
+use discord_log::Logger;
 use schedule::*;
 use serde::Deserialize;
 use std::fs;
@@ -27,6 +28,7 @@ struct PublicData {
 }
 
 fn main() {
+	let logger = Logger::new();
 	let contents = fs::read_to_string("../web/static/resources/json/PublicData.json")
 		.expect("PublicData.json not found");
 	let pubdata: PublicData = serde_json::from_str(&contents).unwrap();
@@ -49,7 +51,7 @@ fn main() {
 		)
 		.expect("Select error");
 	if conn.query_drop("TRUNCATE schedule").is_err() {
-		panic!("Truncate error");
+		logger.panic("weekly/src/main.rs: Truncate error".to_string());
 	}
 	let mut new_rows = vec![];
 	let mut empty_day_cell_obj = vec![];
@@ -108,9 +110,9 @@ fn main() {
 		})
 	);
 	if sql_result.is_err() {
-		panic!("Insert error");
+		logger.panic("weekly/src/main.rs: Insert error".to_string());
 	}
-	println!("Week cycled successfully.");
+	logger.log_message("Week cycled successfully.".to_string());
 }
 
 fn get_mysql_connection() -> Result<PooledConn> {

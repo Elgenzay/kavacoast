@@ -1,5 +1,8 @@
 mod cmds;
 
+use discord_log::Logger;
+use mysql::prelude::Queryable;
+use mysql::{Pool, PooledConn};
 use serde::{Deserialize, Serialize};
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
@@ -16,6 +19,8 @@ use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
 use std::fs;
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::{task, time};
 
 struct ShardManagerContainer;
 
@@ -33,6 +38,7 @@ impl TypeMapKey for BotData {
 struct BotState {
 	initialized: bool,
 	data: JsonData,
+	logger: Logger,
 }
 
 impl BotState {
@@ -41,9 +47,8 @@ impl BotState {
 			initialized: false,
 			data: JsonData {
 				react_role_groups: Vec::new(),
-				error_channel_id: 0,
-				guild_id: 0,
 			},
+			logger: Logger::new(),
 		}
 	}
 }
@@ -51,8 +56,6 @@ impl BotState {
 #[derive(Serialize, Deserialize, Clone)]
 struct JsonData {
 	react_role_groups: Vec<ReactRoleGroup>,
-	error_channel_id: u64,
-	guild_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -90,28 +93,26 @@ impl EventHandler for Handler {
 				})
 				.await
 			{
-				log_error(
-					&ctx,
-					format!(
-						"Error responding to command /{}: {}",
-						command.data.name.as_str(),
-						e
-					),
-				)
-				.await;
+				get_state(&ctx).await.logger.log_error(format!(
+					"Error responding to command /{}: {}",
+					command.data.name.as_str(),
+					e
+				));
 			}
 		}
 	}
 
 	async fn message(&self, ctx: Context, msg: Message) {
-		get_state(&ctx).await;
+		let state = get_state(&ctx).await;
 		if msg.author.bot && msg.author.name == "KavaBot" && msg.content.contains("react") {
 			for emoji in ["✅", "❎", "❤️"] {
 				if let Err(e) = msg
 					.react(&ctx.http, ReactionType::Unicode(String::from(emoji)))
 					.await
 				{
-					log_error(&ctx, format!("Error reacting to message: {}", e)).await;
+					state
+						.logger
+						.log_error(format!("Error reacting to message: {}", e))
 				};
 			}
 		}
@@ -126,22 +127,36 @@ impl EventHandler for Handler {
 	}
 
 	async fn ready(&self, ctx: Context, ready: Ready) {
+		println!("{} is connected!", ready.user.name);
+		let state = get_state(&ctx).await;
 		let cmd_register = Command::create_global_application_command(&ctx.http, |command| {
 			cmds::ping::register(command)
 		})
 		.await;
 		if let Err(e) = cmd_register {
-			log_error(&ctx, e.to_string()).await;
-			panic!("Error registering commands: {}", e.to_string());
+			state
+				.logger
+				.panic(format!("Error registering commands: {}", e.to_string()));
 		};
-		println!("{} is connected!", ready.user.name);
+		if task::spawn(async move {
+			let mut interval = time::interval(Duration::from_millis(1000));
+			loop {
+				interval.tick().await;
+				every_second(&ctx).await;
+			}
+		})
+		.await
+		.is_err()
+		{
+			state.logger.panic("Tokio task spawn failure".to_string());
+		}
 	}
 }
 
 async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 	let result =
 		async {
-			let groups = get_state(&ctx).await.react_role_groups;
+			let groups = get_state(&ctx).await.data.react_role_groups;
 			let msg_id = react.message_id.as_u64();
 			let mut match_group_opt = None;
 			for group in groups {
@@ -205,49 +220,26 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 		}
 		.await;
 	if result.is_err() {
-		log_error(
-			&ctx,
-			format!("Error on reaction update: {}", result.err().unwrap()),
-		)
-		.await;
+		get_state(&ctx).await.logger.log_error(format!(
+			"Error on reaction update: {}",
+			result.err().unwrap()
+		));
 	}
 }
 
-async fn get_state(ctx: &Context) -> JsonData {
+async fn get_state(ctx: &Context) -> BotState {
 	let data = ctx.data.read().await;
-	let config = data.get::<BotData>().unwrap();
-	if config.initialized {
-		return config.clone().data;
+	let state = data.get::<BotData>().unwrap();
+	if state.initialized {
+		return state.clone();
 	}
 	std::mem::drop(data);
 	let mut data = ctx.data.write().await;
-	let config = data.get_mut::<BotData>().unwrap();
-	config.initialized = true;
+	let state = data.get_mut::<BotData>().unwrap();
+	state.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
-	config.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
-	config.clone().data
-}
-
-async fn log_error(ctx: &Context, error_message: String) {
-	let state = get_state(ctx).await;
-	let channel_result = GuildChannel::convert(
-		ctx,
-		Some(GuildId::from(state.guild_id)),
-		Some(ChannelId::from(state.error_channel_id)),
-		&state.error_channel_id.to_string()[..],
-	)
-	.await;
-	let channel = match channel_result {
-		Ok(v) => v,
-		Err(_e) => {
-			println!("Error channel not found. Error message: {}", error_message);
-			return;
-		}
-	};
-	match channel.say(&ctx.http, error_message).await {
-		Ok(_) => (),
-		Err(e) => println!("Error: {}", e.to_string()),
-	};
+	state.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
+	state.clone()
 }
 
 #[tokio::main]
@@ -272,8 +264,55 @@ async fn main() {
 	}
 }
 
+async fn every_second(ctx: &Context) {
+	let mut conn = get_mysql_connection();
+	let rows: Vec<(i64, u64, u64, String)> = conn
+		.query("SELECT id, guild_id, ch_id, msg FROM log_queue LIMIT 1")
+		.unwrap();
+	if rows.len() == 0 {
+		return;
+	}
+	let row = rows.first().unwrap();
+	match conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
+		Ok(_) => (),
+		Err(e) => println!("MySQL delete error: {}", e.to_string()),
+	}
+	let guild_channel = GuildChannel::convert(
+		ctx,
+		Some(GuildId(row.1)),
+		Some(ChannelId(row.2)),
+		&row.2.to_string()[..],
+	)
+	.await;
+
+	match guild_channel {
+		Ok(v) => match v.send_message(&ctx.http, |m| m.content(&row.3)).await {
+			Ok(_) => (),
+			Err(e) => println!("Error sending message: {}", e.to_string()),
+		},
+		Err(e) => println!(
+			"Error finding guild channel from log_queue: {}",
+			e.to_string()
+		),
+	}
+}
+
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 	msg.reply(ctx, "Pong!").await?;
 	Ok(())
+}
+
+fn get_mysql_connection() -> PooledConn {
+	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
+	let url: &str =
+		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
+	let pool = match Pool::new(url) {
+		Ok(v) => v,
+		Err(e) => panic!("{}", e.to_string()),
+	};
+	match pool.get_conn() {
+		Ok(v) => v,
+		Err(e) => panic!("{}", e.to_string()),
+	}
 }
