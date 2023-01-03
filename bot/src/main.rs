@@ -83,6 +83,7 @@ impl EventHandler for Handler {
 		if let Interaction::ApplicationCommand(command) = interaction {
 			let content = match command.data.name.as_str() {
 				"ping" => cmds::ping::run(&command.data.options),
+				"debug" => cmds::debug::run(&command.data.options),
 				_ => "".to_string(),
 			};
 			if let Err(e) = command
@@ -129,8 +130,10 @@ impl EventHandler for Handler {
 	async fn ready(&self, ctx: Context, ready: Ready) {
 		println!("{} is connected!", ready.user.name);
 		let state = get_state(&ctx).await;
-		let cmd_register = Command::create_global_application_command(&ctx.http, |command| {
-			cmds::ping::register(command)
+		let cmd_register = Command::set_global_application_commands(&ctx.http, |commands| {
+			commands
+				.create_application_command(|command| cmds::ping::register(command))
+				.create_application_command(|command| cmds::debug::register(command))
 		})
 		.await;
 		if let Err(e) = cmd_register {
