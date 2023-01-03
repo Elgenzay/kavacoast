@@ -1,30 +1,9 @@
 use discord_log::Logger;
 use kava_mysql::get_mysql_connection;
 use mysql::{prelude::Queryable, *};
+use pubdata::*;
 use schedule::*;
-use serde::Deserialize;
 use std::fs;
-
-#[allow(dead_code)]
-#[derive(Deserialize)]
-struct PubDataShift {
-	name: String,
-	friendly_name: String,
-	description: String,
-}
-
-#[allow(dead_code)]
-#[derive(Deserialize)]
-struct PubDataLocation {
-	name: String,
-	friendly_name: String,
-}
-
-#[derive(Deserialize)]
-struct PublicData {
-	shifts: Vec<PubDataShift>,
-	locations: Vec<PubDataLocation>,
-}
 
 fn main() {
 	let logger = Logger::new();
