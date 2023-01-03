@@ -1,10 +1,9 @@
 use discord_log::Logger;
+use kava_mysql::get_mysql_connection;
+use mysql::{prelude::Queryable, *};
 use schedule::*;
 use serde::Deserialize;
 use std::fs;
-
-use mysql::prelude::*;
-use mysql::*;
 
 #[allow(dead_code)]
 #[derive(Deserialize)]
@@ -32,7 +31,7 @@ fn main() {
 	let contents = fs::read_to_string("../web/static/resources/json/PublicData.json")
 		.expect("PublicData.json not found");
 	let pubdata: PublicData = serde_json::from_str(&contents).unwrap();
-	let mut conn = get_mysql_connection().unwrap();
+	let mut conn = get_mysql_connection();
 	let w2: Vec<(
 		String,
 		String,
@@ -113,19 +112,4 @@ fn main() {
 		logger.panic("weekly/src/main.rs: Insert error".to_string());
 	}
 	logger.log_message("Week cycled successfully.".to_string());
-}
-
-fn get_mysql_connection() -> Result<PooledConn> {
-	dotenvy::dotenv().ok();
-	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
-	let url: &str =
-		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
-	let pool = match Pool::new(url) {
-		Ok(v) => v,
-		Err(e) => return Err(e),
-	};
-	match pool.get_conn() {
-		Ok(v) => Ok(v),
-		Err(e) => Err(e),
-	}
 }

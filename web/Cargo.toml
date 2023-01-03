@@ -15,6 +15,7 @@ rand_core = { version = "0.6", features = ["std"] }
 pbkdf2 = "0.11.0"
 scrypt = "0.10.0"
 schedule = { path = "../schedule" }
+kava_mysql = { path = "../kava_mysql" }
 
 [dependencies.rocket_contrib]
 version = "0.4.10"

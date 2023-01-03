@@ -6,11 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-	tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
-	serenity = { default-features = false, features = ["client", "gateway", "model", "rustls_backend", "cache", "http", "framework", "standard_framework"], version = "0.11.5"}
-	dotenv = "0.15.0"
-	toml = "0.5.9"
-	serde = "1.0.149"
-	serde_json = "1.0.91"
-	mysql = "23.0.0"
-	discord_log = { path = "../discord_log" }
+tokio = { version = "1.18.2", features = ["macros", "rt-multi-thread"] }
+serenity = { default-features = false, features = ["client", "gateway", "model", "rustls_backend", "cache", "http", "framework", "standard_framework"], version = "0.11.5"}
+toml = "0.5.9"
+serde = "1.0.149"
+serde_json = "1.0.91"
+mysql = "23.0.0"
+discord_log = { path = "../discord_log" }
+kava_mysql = { path = "../kava_mysql" }
+dotenvy = "0.15.6"

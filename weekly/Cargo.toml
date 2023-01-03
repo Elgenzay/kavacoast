@@ -12,3 +12,4 @@ serde_json = "1.0.91"
 mysql = "23.0.0"
 schedule = { path = "../schedule" }
 discord_log = { path = "../discord_log" }
+kava_mysql = { path = "../kava_mysql" }

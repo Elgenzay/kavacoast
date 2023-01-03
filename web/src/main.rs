@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::result::Result;
 
 use mysql::prelude::*;
-use mysql::*;
 
+use kava_mysql::get_mysql_connection;
 use rocket::fs::{relative, NamedFile};
 use rocket::http::Status;
 use rocket::response::content::RawJson;
@@ -92,7 +92,7 @@ impl Bartender {
 	}
 
 	fn update_hash(&self, hash: &str) -> Result<(), (Status, String)> {
-		let mut conn = get_mysql_connection()?;
+		let mut conn = get_mysql_connection();
 		let result: Result<Vec<_>, mysql::Error> = conn.exec::<String, &str, (&str, &str)>(
 			&"UPDATE kava.`bartenders` SET `hash`=? WHERE `name`=?;".to_owned(),
 			(hash, &self.name[..]),
@@ -135,26 +135,12 @@ fn auth(input_creds: Json<Credentials>) -> status::Custom<RawJson<String>> {
 }
 
 fn get_bartenders() -> Result<Vec<Bartender>, (Status, String)> {
-	let mut conn = get_mysql_connection()?;
+	let mut conn = get_mysql_connection();
 	let selected_bartenders_result = conn
 		.query_map("SELECT name, hash from bartenders", |(name, hash)| {
 			Bartender { name, hash }
 		});
 	match selected_bartenders_result {
-		Ok(v) => Ok(v),
-		Err(e) => Err((Status::InternalServerError, e.to_string())),
-	}
-}
-
-fn get_mysql_connection() -> Result<PooledConn, (Status, String)> {
-	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
-	let url: &str =
-		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
-	let pool = match Pool::new(url) {
-		Ok(v) => v,
-		Err(e) => return Err((Status::InternalServerError, e.to_string())),
-	};
-	match pool.get_conn() {
 		Ok(v) => Ok(v),
 		Err(e) => Err((Status::InternalServerError, e.to_string())),
 	}

@@ -1,5 +1,6 @@
-use mysql::prelude::*;
-use mysql::*;
+use kava_mysql::get_mysql_connection;
+use mysql::prelude::Queryable;
+use mysql::{params, serde_json};
 use rocket::http::Status;
 use rocket::response::content::RawJson;
 use rocket::response::status;
@@ -22,7 +23,7 @@ pub struct SchedulePostRequest {
 pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<RawJson<String>> {
 	let result = |request: Json<SchedulePostRequest>| -> Result<(), (Status, String)> {
 		request.verify.authenticate()?;
-		let mut conn = super::get_mysql_connection()?;
+		let mut conn = get_mysql_connection();
 		if conn.query_drop("TRUNCATE schedule").is_err() {
 			return Err((Status::InternalServerError, "Truncate error".to_string()));
 		}
@@ -101,7 +102,7 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<RawJson<String>> {
 	let result = |request: Json<super::Credentials>| -> Result<Schedule, (Status, String)> {
 		request.authenticate()?;
-		let mut conn = super::get_mysql_connection()?;
+		let mut conn = get_mysql_connection();
 		let week1_result = conn.query_map(
 			"SELECT location, sun1, mon1, tue1, wed1, thu1, fri1, sat1 from schedule ORDER BY `id`",
 			|(location, sun1, mon1, tue1, wed1, thu1, fri1, sat1)| {
@@ -111,7 +112,7 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 
 		let week2_result: Result<
 			Vec<(String, String, String, String, String, String, String)>,
-			Error,
+			mysql::Error,
 		> = conn.query_map(
 			"SELECT sun2, mon2, tue2, wed2, thu2, fri2, sat2 from schedule ORDER BY `id`",
 			|(sun2, mon2, tue2, wed2, thu2, fri2, sat2)| (sun2, mon2, tue2, wed2, thu2, fri2, sat2),
