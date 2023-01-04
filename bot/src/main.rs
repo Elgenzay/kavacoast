@@ -1,5 +1,6 @@
 mod cmds;
 
+use chrono::{Datelike, TimeZone, Utc, Weekday};
 use discord_log::Logger;
 use kava_mysql::get_mysql_connection;
 use mysql::prelude::Queryable;
@@ -23,6 +24,7 @@ use std::time::Duration;
 use tokio::{task, time};
 
 const TICKRATE_SECONDS: u64 = 4;
+const OFFSET_HOURS: i64 = -7;
 
 struct ShardManagerContainer;
 
@@ -41,6 +43,7 @@ struct BotState {
 	initialized: bool,
 	data: JsonData,
 	logger: Logger,
+	weekday: Weekday,
 }
 
 impl BotState {
@@ -51,6 +54,7 @@ impl BotState {
 				react_role_groups: Vec::new(),
 			},
 			logger: Logger::new(),
+			weekday: get_offset_weekday(),
 		}
 	}
 }
@@ -223,6 +227,10 @@ async fn get_state(ctx: &Context) -> BotState {
 		return state.clone();
 	}
 	std::mem::drop(data);
+	reset_state(ctx).await
+}
+
+async fn reset_state(ctx: &Context) -> BotState {
 	let mut data = ctx.data.write().await;
 	let state = data.get_mut::<BotData>().unwrap();
 	state.initialized = true;
@@ -253,7 +261,24 @@ async fn main() {
 	}
 }
 
+fn get_offset_weekday() -> Weekday {
+	Utc.timestamp_opt(
+		chrono::offset::Local::now().timestamp() + (3600 * OFFSET_HOURS),
+		0,
+	)
+	.unwrap()
+	.date_naive()
+	.weekday()
+}
+
 async fn tick(ctx: &Context) {
+	let state = get_state(&ctx).await;
+	if get_offset_weekday() != state.weekday {
+		schedule_notify::daily();
+		if reset_state(ctx).await.weekday == Weekday::Sat {
+			schedule_notify::weekly();
+		}
+	}
 	let mut conn = get_mysql_connection();
 	let rows: Vec<(i64, u64, u64, String, String)> = conn
 		.query("SELECT id, guild_id, ch_id, msg, reactions FROM log_queue LIMIT 1")
