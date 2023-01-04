@@ -1,5 +1,6 @@
 use kava_mysql::get_mysql_connection;
 use mysql::prelude::Queryable;
+use serde_json::json;
 
 #[derive(Clone)]
 pub struct Logger {
@@ -30,21 +31,21 @@ impl Logger {
 	}
 
 	pub fn log_error(&self, msg: String) {
-		self.log(msg, &self.guild_id, &self.ch_id_error)
+		self.log(msg, &self.guild_id, &self.ch_id_error, vec![])
 	}
 
 	pub fn log_message(&self, msg: String) {
-		self.log(msg, &self.guild_id, &self.ch_id_generic)
+		self.log(msg, &self.guild_id, &self.ch_id_generic, vec![])
 	}
 
-	pub fn log_schedule(&self, msg: String) {
-		self.log(msg, &self.guild_id, &self.ch_id_schedule)
+	pub fn log_schedule(&self, msg: String, reactions: Vec<&String>) {
+		self.log(msg, &self.guild_id, &self.ch_id_schedule, reactions)
 	}
 
-	fn log(&self, msg: String, guild_id: &String, ch_id: &String) {
+	fn log(&self, msg: String, guild_id: &String, ch_id: &String, reactions: Vec<&String>) {
 		match get_mysql_connection().exec_drop(
-			"INSERT INTO log_queue (guild_id, ch_id, msg) VALUES (?,?,?)",
-			(guild_id, ch_id, msg),
+			"INSERT INTO log_queue (guild_id, ch_id, msg, reactions) VALUES (?,?,?,?)",
+			(guild_id, ch_id, msg, json!(reactions)),
 		) {
 			Ok(_) => (),
 			Err(e) => println!("Insert error (nonfatal): {}", e.to_string()),

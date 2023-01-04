@@ -60,6 +60,7 @@ fn main() {
 		}
 	};
 	let mut any = false;
+	let mut reactions = vec![];
 	let mut message = String::new();
 	message.push_str(&daymeta.friendly_name);
 	message.push_str("\n-  -  -  -  -  -  -  -  -  -");
@@ -72,13 +73,10 @@ fn main() {
 		}
 		if has_bartender {
 			any = true;
+			let pubdataloc = pubdata.get_location_by_name(&loc.name).unwrap();
+			reactions.push(&pubdataloc.emoji);
 			message.push_str("\n\n");
-			message.push_str(
-				&pubdata
-					.get_location_by_name(&loc.name)
-					.unwrap()
-					.friendly_name[..],
-			);
+			message.push_str(&pubdataloc.friendly_name[..]);
 			for shift in loc.shifts {
 				if shift.bartender.is_empty() {
 					continue;
@@ -97,6 +95,6 @@ fn main() {
 		}
 	}
 	if any {
-		logger.log_schedule(message);
+		logger.log_schedule(message, reactions);
 	}
 }

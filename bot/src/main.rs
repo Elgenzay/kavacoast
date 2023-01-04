@@ -105,22 +105,6 @@ impl EventHandler for Handler {
 		}
 	}
 
-	async fn message(&self, ctx: Context, msg: Message) {
-		let state = get_state(&ctx).await;
-		if msg.author.bot && msg.author.name == "KavaBot" && msg.content.contains("react") {
-			for emoji in ["✅", "❎", "❤️"] {
-				if let Err(e) = msg
-					.react(&ctx.http, ReactionType::Unicode(String::from(emoji)))
-					.await
-				{
-					state
-						.logger
-						.log_error(format!("Error reacting to message: {}", e))
-				};
-			}
-		}
-	}
-
 	async fn reaction_add(&self, ctx: Context, react: Reaction) {
 		reaction_update(ctx, react, true).await;
 	}
@@ -271,8 +255,8 @@ async fn main() {
 
 async fn tick(ctx: &Context) {
 	let mut conn = get_mysql_connection();
-	let rows: Vec<(i64, u64, u64, String)> = conn
-		.query("SELECT id, guild_id, ch_id, msg FROM log_queue LIMIT 1")
+	let rows: Vec<(i64, u64, u64, String, String)> = conn
+		.query("SELECT id, guild_id, ch_id, msg, reactions FROM log_queue LIMIT 1")
 		.unwrap();
 	if rows.len() == 0 {
 		return;
@@ -292,7 +276,15 @@ async fn tick(ctx: &Context) {
 
 	match guild_channel {
 		Ok(v) => match v.send_message(&ctx.http, |m| m.content(&row.3)).await {
-			Ok(_) => (),
+			Ok(msg) => {
+				let reactions: Vec<String> = serde_json::from_str(&row.4).unwrap();
+				for reaction in reactions {
+					msg.react(&ctx.http, ReactionType::Unicode(reaction.to_string()))
+						.await
+						.unwrap();
+				}
+				()
+			}
 			Err(e) => println!("Error sending message: {}", e.to_string()),
 		},
 		Err(e) => println!(

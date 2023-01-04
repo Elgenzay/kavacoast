@@ -11,6 +11,7 @@ pub struct PubDataShift {
 pub struct PubDataLocation {
 	pub name: String,
 	pub friendly_name: String,
+	pub emoji: String,
 }
 
 #[derive(Deserialize)]
