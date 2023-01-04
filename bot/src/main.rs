@@ -14,7 +14,7 @@ use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
 use serenity::model::prelude::command::Command;
 use serenity::model::prelude::interaction::{Interaction, InteractionResponseType};
-use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId};
+use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId, UserId};
 use serenity::prelude::Mutex;
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
@@ -106,6 +106,12 @@ impl EventHandler for Handler {
 					e
 				));
 			}
+		}
+	}
+
+	async fn message(&self, _ctx: Context, msg: Message) {
+		if msg.content == "k!cycle" && msg.author.id == UserId(97802694302896128) {
+			schedule_notify::weekly();
 		}
 	}
 
