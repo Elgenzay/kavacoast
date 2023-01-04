@@ -6,6 +6,7 @@ pub struct Logger {
 	guild_id: String,
 	ch_id_error: String,
 	ch_id_generic: String,
+	ch_id_schedule: String,
 }
 
 impl Logger {
@@ -18,6 +19,8 @@ impl Logger {
 				.expect("Missing environment variable: DISCORD_ERROR_CHANNEL_ID"),
 			ch_id_generic: std::env::var("DISCORD_LOG_CHANNEL_ID")
 				.expect("Missing environment variable: DISCORD_LOG_CHANNEL_ID"),
+			ch_id_schedule: std::env::var("DISCORD_SCHEDULE_CHANNEL_ID")
+				.expect("Missing environment variable: DISCORD_SCHEDULE_CHANNEL_ID"),
 		}
 	}
 
@@ -32,6 +35,10 @@ impl Logger {
 
 	pub fn log_message(&self, msg: String) {
 		self.log(msg, &self.guild_id, &self.ch_id_generic)
+	}
+
+	pub fn log_schedule(&self, msg: String) {
+		self.log(msg, &self.guild_id, &self.ch_id_schedule)
 	}
 
 	fn log(&self, msg: String, guild_id: &String, ch_id: &String) {

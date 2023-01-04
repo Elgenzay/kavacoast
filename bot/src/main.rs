@@ -22,6 +22,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::{task, time};
 
+const TICKRATE_SECONDS: u64 = 4;
+
 struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
@@ -142,10 +144,10 @@ impl EventHandler for Handler {
 				.panic(format!("Error registering commands: {}", e.to_string()));
 		};
 		if task::spawn(async move {
-			let mut interval = time::interval(Duration::from_millis(1000));
+			let mut interval = time::interval(Duration::from_millis(TICKRATE_SECONDS * 1000));
 			loop {
 				interval.tick().await;
-				every_second(&ctx).await;
+				tick(&ctx).await;
 			}
 		})
 		.await
@@ -267,7 +269,7 @@ async fn main() {
 	}
 }
 
-async fn every_second(ctx: &Context) {
+async fn tick(ctx: &Context) {
 	let mut conn = get_mysql_connection();
 	let rows: Vec<(i64, u64, u64, String)> = conn
 		.query("SELECT id, guild_id, ch_id, msg FROM log_queue LIMIT 1")
