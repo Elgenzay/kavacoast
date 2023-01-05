@@ -13,3 +13,18 @@ pub fn get_mysql_connection() -> PooledConn {
 		Err(e) => panic!("{}", e.to_string()),
 	}
 }
+
+pub fn mysql_is_running() -> bool {
+	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
+	let url: &str =
+		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
+	let pool = match Pool::new(url) {
+		Ok(v) => v,
+		Err(_) => return false,
+	};
+	match pool.get_conn() {
+		Ok(_) => (),
+		Err(_) => return false,
+	};
+	true
+}

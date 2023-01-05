@@ -2,7 +2,7 @@ mod cmds;
 
 use chrono::{Datelike, TimeZone, Utc, Weekday};
 use discord_log::Logger;
-use kava_mysql::get_mysql_connection;
+use kava_mysql::{get_mysql_connection, mysql_is_running};
 use mysql::prelude::Queryable;
 use serde::{Deserialize, Serialize};
 use serenity::async_trait;
@@ -239,6 +239,7 @@ async fn get_state(ctx: &Context) -> BotState {
 async fn reset_state(ctx: &Context) -> BotState {
 	let mut data = ctx.data.write().await;
 	let state = data.get_mut::<BotData>().unwrap();
+	state.weekday = get_offset_weekday();
 	state.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
 	state.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
@@ -278,6 +279,9 @@ fn get_offset_weekday() -> Weekday {
 }
 
 async fn tick(ctx: &Context) {
+	if !mysql_is_running() {
+		return;
+	}
 	let state = get_state(&ctx).await;
 	if get_offset_weekday() != state.weekday {
 		schedule_notify::daily();
