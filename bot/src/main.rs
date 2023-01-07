@@ -23,8 +23,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::{task, time};
 
-const TICKRATE_SECONDS: u64 = 10;
-const OFFSET_HOURS: i64 = -3;
+const TICKRATE_SECONDS: u64 = 4;
+const OFFSET_HOURS: i64 = -17;
 
 struct ShardManagerContainer;
 
