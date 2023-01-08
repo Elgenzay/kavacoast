@@ -23,9 +23,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::{task, time};
 
-const TICKRATE_SECONDS: u64 = 4;
-const OFFSET_HOURS: i64 = -17;
-
 struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
@@ -50,11 +47,9 @@ impl BotState {
 	fn new() -> BotState {
 		BotState {
 			initialized: false,
-			data: JsonData {
-				react_role_groups: Vec::new(),
-			},
+			data: JsonData::new(),
 			logger: Logger::new(),
-			weekday: get_offset_weekday(),
+			weekday: Weekday::Sun,
 		}
 	}
 }
@@ -62,6 +57,18 @@ impl BotState {
 #[derive(Serialize, Deserialize, Clone)]
 struct JsonData {
 	react_role_groups: Vec<ReactRoleGroup>,
+	tickrate_seconds: u64,
+	offset_hours: i64,
+}
+
+impl JsonData {
+	fn new() -> JsonData {
+		JsonData {
+			react_role_groups: vec![],
+			tickrate_seconds: 0,
+			offset_hours: 0,
+		}
+	}
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -139,7 +146,8 @@ impl EventHandler for Handler {
 			std::process::abort();
 		};
 		if task::spawn(async move {
-			let mut interval = time::interval(Duration::from_millis(TICKRATE_SECONDS * 1000));
+			let mut interval =
+				time::interval(Duration::from_millis(state.data.tickrate_seconds * 1000));
 			loop {
 				interval.tick().await;
 				tick(&ctx).await;
@@ -246,7 +254,7 @@ async fn reset_state(ctx: &Context) -> BotState {
 	let state = data
 		.get_mut::<BotData>()
 		.expect("RwLockReadGuard get error in reset_state");
-	state.weekday = get_offset_weekday();
+	state.weekday = get_weekday(&state.data.offset_hours);
 	state.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
 	state.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
@@ -275,14 +283,11 @@ async fn main() {
 	}
 }
 
-fn get_offset_weekday() -> Weekday {
-	Utc.timestamp_opt(
-		chrono::offset::Local::now().timestamp() + (3600 * OFFSET_HOURS),
-		0,
-	)
-	.unwrap()
-	.date_naive()
-	.weekday()
+fn get_weekday(offset: &i64) -> Weekday {
+	Utc.timestamp_opt(chrono::offset::Utc::now().timestamp() + (3600 * offset), 0)
+		.unwrap()
+		.date_naive()
+		.weekday()
 }
 
 async fn tick(ctx: &Context) {
@@ -291,7 +296,7 @@ async fn tick(ctx: &Context) {
 		Err(_) => return,
 	};
 	let state = get_state(&ctx).await;
-	if get_offset_weekday() != state.weekday {
+	if get_weekday(&state.data.offset_hours) != state.weekday {
 		schedule_notify::daily();
 		if reset_state(ctx).await.weekday == Weekday::Sat {
 			schedule_notify::weekly();

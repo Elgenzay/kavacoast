@@ -1,4 +1,6 @@
 {
+	"tickrate_seconds": 4,
+	"offset_hours": -17,
 	"react_role_groups": [
 		{
 			"message_id": 123,
