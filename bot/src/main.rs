@@ -239,9 +239,13 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 
 async fn get_state(ctx: &Context) -> BotState {
 	let data = ctx.data.read().await;
-	let state = data
-		.get::<BotData>()
-		.expect("RwLockReadGuard get error in get_state");
+	let state = match data.get::<BotData>() {
+		Some(v) => v,
+		None => {
+			println!("(Fatal) get_state(): State data not found");
+			std::process::abort();
+		}
+	};
 	if state.initialized {
 		return state.clone();
 	}
@@ -251,13 +255,30 @@ async fn get_state(ctx: &Context) -> BotState {
 
 async fn reset_state(ctx: &Context) -> BotState {
 	let mut data = ctx.data.write().await;
-	let state = data
-		.get_mut::<BotData>()
-		.expect("RwLockReadGuard get error in reset_state");
+	let state = match data.get_mut::<BotData>() {
+		Some(v) => v,
+		None => {
+			println!("(Fatal) reset_state(): State data not found");
+			std::process::abort();
+		}
+	};
 	state.weekday = get_weekday(&state.data.offset_hours);
 	state.initialized = true;
-	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
-	state.data = serde_json::from_str(&json_str).expect("Error parsing BotConfig.json");
+	let json_str = match fs::read_to_string("BotConfig.json") {
+		Ok(v) => v,
+		Err(_) => {
+			state
+				.logger
+				.log_error("(Fatal) Error reading BotConfig.json".to_owned());
+			std::process::abort();
+		}
+	};
+	state.data = match serde_json::from_str(&json_str) {
+		Ok(v) => v,
+		Err(_) => state
+			.logger
+			.panic("Error parsing BotConfig.json".to_owned()),
+	};
 	state.clone()
 }
 
