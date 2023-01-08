@@ -23,9 +23,9 @@ pub struct SchedulePostRequest {
 pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<RawJson<String>> {
 	let result = |request: Json<SchedulePostRequest>| -> Result<(), (Status, String)> {
 		request.verify.authenticate()?;
-		let mut conn = get_mysql_connection();
+		let mut conn = get_mysql_connection().unwrap();
 		if conn.query_drop("TRUNCATE schedule").is_err() {
-			return Err((Status::InternalServerError, "Truncate error".to_string()));
+			return Err((Status::InternalServerError, "Truncate error".to_owned()));
 		}
 		let mut locations = vec![];
 		for loc in &request.schedule.week1.sun.locations {
@@ -46,12 +46,19 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 						.locations
 					{
 						if &day_loc.name == loc {
+							let dayval = match serde_json::to_string(&day_loc.shifts) {
+								Ok(v) => v,
+								Err(_) => {
+									return Err((
+										Status::InternalServerError,
+										"Unexpected error".to_owned(),
+									))
+								}
+							};
+
 							let mut day_string = day_i.to_string();
 							day_string.push_str(&week_i.to_string());
-							new_row.set_day(
-								&day_string,
-								serde_json::to_string(&day_loc.shifts).unwrap(),
-							);
+							new_row.set_day(&day_string, dayval);
 							break;
 						}
 					}
@@ -61,7 +68,7 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 			new_rows.push(new_row);
 		}
 
-		let sql_result = conn.exec_batch("INSERT INTO schedule (
+		match conn.exec_batch("INSERT INTO schedule (
 			location, sun1, mon1, tue1, wed1, thu1, fri1, sat1, sun2, mon2, tue2, wed2, thu2, fri2, sat2
 		) VALUES (
 			:location, :sun1, :mon1, :tue1, :wed1, :thu1, :fri1, :sat1, :sun2, :mon2, :tue2, :wed2, :thu2, :fri2, :sat2
@@ -82,15 +89,14 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 				"fri2" => &r.fri2,
 				"sat2" => &r.sat2,
 			})
-		);
-		match sql_result {
+		){
 			Ok(_) => Ok(()),
-			Err(v) => Err((Status::InternalServerError, v.to_string())),
+			Err(e) => Err((Status::InternalServerError, e.to_string())),
 		}
 	};
 	match result(request) {
 		Ok(_) => status::Custom(Status::Ok, RawJson("{\"success\":true}".to_owned())),
-		Err(e) => status::Custom(e.0, RawJson(e.1)),
+		Err(e) => status::Custom(e.0, RawJson(format!("{{\"error\":\"{}\"}}", e.1))),
 	}
 }
 
@@ -102,7 +108,11 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<RawJson<String>> {
 	let result = |request: Json<super::Credentials>| -> Result<Schedule, (Status, String)> {
 		request.authenticate()?;
-		let mut conn = get_mysql_connection();
+		let mut conn = match get_mysql_connection() {
+			Ok(v) => v,
+			Err(_) => return Err((Status::InternalServerError, "MySQL Error".to_owned())),
+		};
+
 		let week1_result = conn.query_map(
 			"SELECT location, sun1, mon1, tue1, wed1, thu1, fri1, sat1 from schedule ORDER BY `id`",
 			|(location, sun1, mon1, tue1, wed1, thu1, fri1, sat1)| {
@@ -117,12 +127,12 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 			"SELECT sun2, mon2, tue2, wed2, thu2, fri2, sat2 from schedule ORDER BY `id`",
 			|(sun2, mon2, tue2, wed2, thu2, fri2, sat2)| (sun2, mon2, tue2, wed2, thu2, fri2, sat2),
 		);
-		if week1_result.is_err() || week2_result.is_err() {
-			return Err((Status::from_code(500).unwrap(), "MySQL Error".to_string()));
-		}
 
-		let w1 = week1_result.ok().unwrap();
-		let w2 = week2_result.ok().unwrap();
+		if week1_result.is_err() || week2_result.is_err() {
+			return Err((Status::InternalServerError, "MySQL Error".to_owned()));
+		}
+		let w1 = week1_result.unwrap();
+		let w2 = week2_result.unwrap();
 
 		let mut rows = vec![];
 		let mut i = 0;
@@ -166,7 +176,15 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 				day_string.push_str(&week_i.to_string());
 				for row in &rows {
 					let shifts: Vec<ScheduleShift> =
-						serde_json::from_str(row.get_day(&day_string[..])).unwrap();
+						match serde_json::from_str(row.get_day(&day_string[..])) {
+							Ok(v) => v,
+							Err(_) => {
+								return Err((
+									Status::InternalServerError,
+									"Internal server error".to_owned(),
+								))
+							}
+						};
 					let day = schedule.get_week(week_i).get_day(&day_i);
 					let loc_i = day.get_location_index_by_name(row.location.to_string());
 					for shift in shifts {
@@ -181,7 +199,13 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 	};
 
 	match result(input_creds) {
-		Ok(v) => status::Custom(Status::Ok, RawJson(serde_json::to_string(&v).unwrap())),
-		Err(e) => status::Custom(e.0, RawJson(e.1)),
+		Ok(v) => match serde_json::to_string(&v) {
+			Ok(v) => status::Custom(Status::Ok, RawJson(v)),
+			Err(_) => status::Custom(
+				Status::InternalServerError,
+				RawJson("{\"error\":\"Internal server error\"}".to_owned()),
+			),
+		},
+		Err(e) => status::Custom(e.0, RawJson(format!("{{\"error\":\"{}\"}}", e.1))),
 	}
 }

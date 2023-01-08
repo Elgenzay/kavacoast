@@ -19,16 +19,16 @@ pub fn run(options: &[CommandDataOption]) -> String {
 
 	match &opt_str[..] {
 		"invoke_log" => {
-			let s = "Log test invoked.".to_string();
-			Logger::new().log_message(s.to_string());
+			let s = "Log test invoked.".to_owned();
+			Logger::new().log_message(s.to_owned());
 			s
 		}
 		"invoke_error" => {
-			let s = "Error test invoked.".to_string();
-			Logger::new().log_error(s.to_string());
+			let s = "Error test invoked.".to_owned();
+			Logger::new().log_error(s.to_owned());
 			s
 		}
-		_ => "Invalid function identifier string".to_string(),
+		_ => "Invalid function identifier string".to_owned(),
 	}
 }
 

@@ -4,7 +4,6 @@ use kava_mysql::get_mysql_connection;
 use mysql::{params, prelude::Queryable};
 use pubdata::*;
 use schedule::*;
-use serde_json::to_string;
 use std::fs;
 
 struct DayMeta {
@@ -25,7 +24,10 @@ pub fn daily() {
 	let logger = Logger::new();
 	let contents = fs::read_to_string("../web/static/resources/json/PublicData.json")
 		.expect("PublicData.json not found");
-	let pubdata: PublicData = serde_json::from_str(&contents).unwrap();
+	let pubdata: PublicData = match serde_json::from_str(&contents) {
+		Ok(v) => v,
+		Err(_) => logger.panic("Error parsing PublicData.json".to_owned()),
+	};
 	let daymeta = match chrono::offset::Utc::now().date_naive().weekday() {
 		Weekday::Sun => DayMeta::new(1, "Sunday"),
 		Weekday::Mon => DayMeta::new(2, "Monday"),
@@ -35,7 +37,10 @@ pub fn daily() {
 		Weekday::Fri => DayMeta::new(6, "Friday"),
 		Weekday::Sat => DayMeta::new(7, "Saturday"),
 	};
-	let mut conn = get_mysql_connection();
+	let mut conn = match get_mysql_connection() {
+		Ok(v) => v,
+		Err(e) => logger.panic(format!("daily() MySQL connect error: {}", e)),
+	};
 	let row = match conn.query_map(
 		"SELECT location, sun1, mon1, tue1, wed1, thu1, fri1, sat1 from schedule ORDER BY `id`",
 		|(location, sun1, mon1, tue1, wed1, thu1, fri1, sat1)| -> [String; 8] {
@@ -46,7 +51,10 @@ pub fn daily() {
 			let mut day = ScheduleDay::empty();
 			for row in v {
 				let shifts: Vec<ScheduleShift> =
-					serde_json::from_str(&row[daymeta.column_index][..]).unwrap();
+					match serde_json::from_str(&row[daymeta.column_index][..]) {
+						Ok(v) => v,
+						Err(_) => logger.panic(format!("daily(): Error parsing day")),
+					};
 				let loc = ScheduleLocation {
 					name: row[0].to_string(),
 					shifts: shifts,
@@ -57,13 +65,14 @@ pub fn daily() {
 		}
 		Err(e) => {
 			logger.panic(format!("daily/src/main.rs Select Error: {}", e.to_string()));
-			panic!();
 		}
 	};
 
-	let bartenders: Vec<(String, u64)> = conn
-		.query("SELECT name, discord_id FROM bartenders")
-		.unwrap();
+	let bartenders: Vec<(String, u64)> = match conn.query("SELECT name, discord_id FROM bartenders")
+	{
+		Ok(v) => v,
+		Err(e) => logger.panic(format!("daily() MySQL select error: {}", e.to_string())),
+	};
 
 	let mut any = false;
 	let mut reactions = vec![];
@@ -79,7 +88,12 @@ pub fn daily() {
 		}
 		if has_bartender {
 			any = true;
-			let pubdataloc = pubdata.get_location_by_name(&loc.name).unwrap();
+			let pubdataloc = match pubdata.get_location_by_name(&loc.name) {
+				Some(v) => v,
+				None => logger.panic(
+					"schedule_notify/src/lib.rs: get_location_by_name returned None".to_owned(),
+				),
+			};
 			reactions.push(&pubdataloc.emoji);
 			message.push_str("\n\n");
 			message.push_str(&pubdataloc.friendly_name[..]);
@@ -88,7 +102,12 @@ pub fn daily() {
 					continue;
 				}
 				message.push_str("\n");
-				let pubdatashift = pubdata.get_shift_by_name(&shift.name).unwrap();
+				let pubdatashift = match pubdata.get_shift_by_name(&shift.name) {
+					Some(v) => v,
+					None => logger.panic(
+						"schedule_notify/src/lib.rs: get_shift_by_name returned None".to_owned(),
+					),
+				};
 				let mut bt_id = shift.bartender.to_string();
 				for bartender in &bartenders {
 					if &bartender.0 == &shift.bartender {
@@ -116,8 +135,14 @@ pub fn weekly() {
 	let logger = Logger::new();
 	let contents = fs::read_to_string("../web/static/resources/json/PublicData.json")
 		.expect("PublicData.json not found");
-	let pubdata: PublicData = serde_json::from_str(&contents).unwrap();
-	let mut conn = get_mysql_connection();
+	let pubdata: PublicData = match serde_json::from_str(&contents) {
+		Ok(v) => v,
+		Err(_) => logger.panic("weekly(): Error parsing PublicData.json".to_owned()),
+	};
+	let mut conn = match get_mysql_connection() {
+		Ok(v) => v,
+		Err(e) => logger.panic(format!("weekly() MySQL connect error: {}", e)),
+	};
 	let w2: Vec<(
 		String,
 		String,
@@ -136,7 +161,7 @@ pub fn weekly() {
 		)
 		.expect("Select error");
 	if conn.query_drop("TRUNCATE schedule").is_err() {
-		logger.panic("weekly/src/main.rs: Truncate error".to_string());
+		logger.panic("weekly/src/main.rs: Truncate error".to_owned());
 	}
 	let mut new_rows = vec![];
 	let mut empty_day_cell_obj = vec![];
@@ -195,7 +220,7 @@ pub fn weekly() {
 		})
 	);
 	if sql_result.is_err() {
-		logger.panic("weekly/src/main.rs: Insert error".to_string());
+		logger.panic("weekly/src/main.rs: Insert error".to_owned());
 	}
-	logger.log_message("Week cycled successfully.".to_string());
+	logger.log_message("Week cycled successfully.".to_owned());
 }

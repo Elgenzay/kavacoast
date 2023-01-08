@@ -2,7 +2,7 @@ mod cmds;
 
 use chrono::{Datelike, TimeZone, Utc, Weekday};
 use discord_log::Logger;
-use kava_mysql::{get_mysql_connection, mysql_is_running};
+use kava_mysql::get_mysql_connection;
 use mysql::prelude::Queryable;
 use serde::{Deserialize, Serialize};
 use serenity::async_trait;
@@ -90,7 +90,7 @@ impl EventHandler for Handler {
 			let content = match command.data.name.as_str() {
 				"ping" => cmds::ping::run(&command.data.options),
 				"debug" => cmds::debug::run(&command.data.options),
-				_ => "".to_string(),
+				_ => String::new(),
 			};
 			if let Err(e) = command
 				.create_interaction_response(&ctx.http, |response| {
@@ -147,7 +147,7 @@ impl EventHandler for Handler {
 		.await
 		.is_err()
 		{
-			state.logger.panic("Tokio task spawn failure".to_string());
+			state.logger.panic("Tokio task spawn failure".to_owned());
 		}
 	}
 }
@@ -172,18 +172,19 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 				ReactionType::Unicode(s) => s,
 				_ => return Ok(()),
 			};
-			let mut role_id = None;
+			let mut role_id_opt = None;
 			let mut remove_role_ids = vec![];
 			for reactrole in match_group.roles {
 				if reaction_str == &reactrole.emoji {
-					role_id = Some(reactrole.role_id);
+					role_id_opt = Some(reactrole.role_id);
 				} else {
 					remove_role_ids.push(reactrole.role_id);
 				}
 			}
-			if role_id.is_none() {
-				return Ok(());
-			}
+			let role_id = match role_id_opt {
+				Some(v) => v,
+				None => return Ok(()),
+			};
 			let user_id = match &react.user_id {
 				Some(v) => v,
 				None => return Ok(()),
@@ -204,31 +205,31 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 				}
 			}
 			if adding {
-				if let Err(e) = member.add_role(&ctx.http, RoleId(role_id.unwrap())).await {
+				if let Err(e) = member.add_role(&ctx.http, RoleId(role_id)).await {
 					return Err(e.to_string());
 				};
 			} else {
-				if let Err(e) = member
-					.remove_role(&ctx.http, RoleId(role_id.unwrap()))
-					.await
-				{
+				if let Err(e) = member.remove_role(&ctx.http, RoleId(role_id)).await {
 					return Err(e.to_string());
 				};
 			}
 			Ok(())
 		}
 		.await;
-	if result.is_err() {
-		get_state(&ctx).await.logger.log_error(format!(
-			"Error on reaction update: {}",
-			result.err().unwrap()
-		));
+	match result {
+		Ok(_) => (),
+		Err(e) => get_state(&ctx)
+			.await
+			.logger
+			.log_error(format!("Error on reaction update: {}", e.to_string())),
 	}
 }
 
 async fn get_state(ctx: &Context) -> BotState {
 	let data = ctx.data.read().await;
-	let state = data.get::<BotData>().unwrap();
+	let state = data
+		.get::<BotData>()
+		.expect("RwLockReadGuard get error in get_state");
 	if state.initialized {
 		return state.clone();
 	}
@@ -238,7 +239,9 @@ async fn get_state(ctx: &Context) -> BotState {
 
 async fn reset_state(ctx: &Context) -> BotState {
 	let mut data = ctx.data.write().await;
-	let state = data.get_mut::<BotData>().unwrap();
+	let state = data
+		.get_mut::<BotData>()
+		.expect("RwLockReadGuard get error in reset_state");
 	state.weekday = get_offset_weekday();
 	state.initialized = true;
 	let json_str = fs::read_to_string("BotConfig.json").expect("Error reading BotConfig.json");
@@ -279,9 +282,10 @@ fn get_offset_weekday() -> Weekday {
 }
 
 async fn tick(ctx: &Context) {
-	if !mysql_is_running() {
-		return;
-	}
+	let mut conn = match get_mysql_connection() {
+		Ok(v) => v,
+		Err(_) => return,
+	};
 	let state = get_state(&ctx).await;
 	if get_offset_weekday() != state.weekday {
 		schedule_notify::daily();
@@ -289,14 +293,15 @@ async fn tick(ctx: &Context) {
 			schedule_notify::weekly();
 		}
 	}
-	let mut conn = get_mysql_connection();
-	let rows: Vec<(i64, u64, u64, String, String)> = conn
-		.query("SELECT id, guild_id, ch_id, msg, reactions FROM log_queue LIMIT 1")
-		.unwrap();
-	if rows.len() == 0 {
-		return;
-	}
-	let row = rows.first().unwrap();
+	let rows: Vec<(i64, u64, u64, String, String)> =
+		match conn.query("SELECT id, guild_id, ch_id, msg, reactions FROM log_queue LIMIT 1") {
+			Ok(v) => v,
+			Err(_) => return,
+		};
+	let row = match rows.first() {
+		Some(v) => v,
+		None => return,
+	};
 	match conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
 		Ok(_) => (),
 		Err(e) => println!("MySQL delete error: {}", e.to_string()),
@@ -312,13 +317,18 @@ async fn tick(ctx: &Context) {
 	match guild_channel {
 		Ok(v) => match v.send_message(&ctx.http, |m| m.content(&row.3)).await {
 			Ok(msg) => {
-				let reactions: Vec<String> = serde_json::from_str(&row.4).unwrap();
+				let reactions: Vec<String> = match serde_json::from_str(&row.4) {
+					Ok(v) => v,
+					Err(_) => vec![],
+				};
 				for reaction in reactions {
-					msg.react(&ctx.http, ReactionType::Unicode(reaction.to_string()))
+					if let Err(e) = msg
+						.react(&ctx.http, ReactionType::Unicode(reaction.to_string()))
 						.await
-						.unwrap();
+					{
+						println!("Error reacting to message: {}", e.to_string());
+					};
 				}
-				()
 			}
 			Err(e) => println!("Error sending message: {}", e.to_string()),
 		},

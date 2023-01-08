@@ -60,7 +60,7 @@ impl Credentials {
 		let matches = Argon2::default().verify_password(&self.password.as_bytes(), &passwordhash);
 		match matches {
 			Ok(_) => Ok(bartender),
-			Err(_) => Err((Status::Unauthorized, "Credentials invalid".to_string())),
+			Err(_) => Err((Status::Unauthorized, "Credentials invalid".to_owned())),
 		}
 	}
 }
@@ -85,21 +85,21 @@ impl Bartender {
 				return Ok(bt);
 			}
 		}
-		Err((
-			Status::from_code(401).unwrap(),
-			"Credentials invalid".to_owned(),
-		))
+		Err((Status::Unauthorized, "Credentials invalid".to_owned()))
 	}
 
 	fn update_hash(&self, hash: &str) -> Result<(), (Status, String)> {
-		let mut conn = get_mysql_connection();
+		let mut conn = match get_mysql_connection() {
+			Ok(v) => v,
+			Err(_) => return Err((Status::InternalServerError, "MySQL error".to_owned())),
+		};
 		let result: Result<Vec<_>, mysql::Error> = conn.exec::<String, &str, (&str, &str)>(
 			&"UPDATE kava.`bartenders` SET `hash`=? WHERE `name`=?;".to_owned(),
 			(hash, &self.name[..]),
 		);
 		match result {
 			Ok(_) => Ok(()),
-			Err(e) => Err((Status::InternalServerError, format!("MySQL error: {}", e))),
+			Err(_) => Err((Status::InternalServerError, "MySQL error".to_owned())),
 		}
 	}
 }
@@ -129,13 +129,13 @@ fn change_password(request: Json<ChangePassRequest>) -> status::Custom<RawJson<S
 #[rocket::post("/api/auth", format = "application/json", data = "<input_creds>")]
 fn auth(input_creds: Json<Credentials>) -> status::Custom<RawJson<String>> {
 	match input_creds.authenticate() {
-		Ok(_) => status::Custom(Status::Ok, RawJson("{\"success\":true}".to_string())),
+		Ok(_) => status::Custom(Status::Ok, RawJson("{\"success\":true}".to_owned())),
 		Err(e) => status::Custom(e.0, RawJson(format!("{{\"error\":\"{}\"}}", e.1))),
 	}
 }
 
 fn get_bartenders() -> Result<Vec<Bartender>, (Status, String)> {
-	let mut conn = get_mysql_connection();
+	let mut conn = get_mysql_connection().unwrap();
 	let selected_bartenders_result = conn
 		.query_map("SELECT name, hash from bartenders", |(name, hash)| {
 			Bartender { name, hash }

@@ -4,6 +4,8 @@ This is a [Rocket](https://github.com/SergioBenitez/Rocket/) website and [Sereni
 The website and Discord invite is at https://kava.elg.gg
 
 # Setup
+NOTE: THIS GUIDE IS OUTDATED
+
 If you want to try/implement/modify/contribute to/study it, here's a guide for setting up the environment.
 
 In this guide, screaming snake case within curly brackets {LIKE_THIS} denote environment-specific values.

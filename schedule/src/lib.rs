@@ -49,13 +49,13 @@ impl ScheduleWeek {
 
 	pub fn days() -> Vec<String> {
 		vec![
-			"sun".to_string(),
-			"mon".to_string(),
-			"tue".to_string(),
-			"wed".to_string(),
-			"thu".to_string(),
-			"fri".to_string(),
-			"sat".to_string(),
+			"sun".to_owned(),
+			"mon".to_owned(),
+			"tue".to_owned(),
+			"wed".to_owned(),
+			"thu".to_owned(),
+			"fri".to_owned(),
+			"sat".to_owned(),
 		]
 	}
 
@@ -116,7 +116,7 @@ impl ScheduleLocation {
 		}
 		self.shifts.push(ScheduleShift {
 			name,
-			bartender: "".to_string(),
+			bartender: String::new(),
 		});
 		self.shifts.len() - 1
 	}

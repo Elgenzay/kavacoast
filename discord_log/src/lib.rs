@@ -25,7 +25,7 @@ impl Logger {
 		}
 	}
 
-	pub fn panic(&self, msg: String) {
+	pub fn panic(&self, msg: String) -> ! {
 		self.log_error(msg.to_string());
 		panic!("{}", msg);
 	}
@@ -43,7 +43,7 @@ impl Logger {
 	}
 
 	fn log(&self, msg: String, guild_id: &String, ch_id: &String, reactions: Vec<&String>) {
-		match get_mysql_connection().exec_drop(
+		match get_mysql_connection().unwrap().exec_drop(
 			"INSERT INTO log_queue (guild_id, ch_id, msg, reactions) VALUES (?,?,?,?)",
 			(guild_id, ch_id, msg, json!(reactions)),
 		) {
