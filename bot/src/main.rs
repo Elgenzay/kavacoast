@@ -262,7 +262,6 @@ async fn reset_state(ctx: &Context) -> BotState {
 			std::process::abort();
 		}
 	};
-	state.weekday = get_weekday(&state.data.offset_hours);
 	state.initialized = true;
 	let json_str = match fs::read_to_string("BotConfig.json") {
 		Ok(v) => v,
@@ -279,6 +278,7 @@ async fn reset_state(ctx: &Context) -> BotState {
 			.logger
 			.panic("Error parsing BotConfig.json".to_owned()),
 	};
+	state.weekday = get_weekday(&state.data.offset_hours);
 	state.clone()
 }
 
