@@ -135,7 +135,8 @@ impl EventHandler for Handler {
 		if let Err(e) = cmd_register {
 			state
 				.logger
-				.panic(format!("Error registering commands: {}", e.to_string()));
+				.log_error(format!("Error registering commands: {}", e.to_string()));
+			std::process::abort();
 		};
 		if task::spawn(async move {
 			let mut interval = time::interval(Duration::from_millis(TICKRATE_SECONDS * 1000));
@@ -147,7 +148,10 @@ impl EventHandler for Handler {
 		.await
 		.is_err()
 		{
-			state.logger.panic("Tokio task spawn failure".to_owned());
+			state
+				.logger
+				.log_error("Tokio task spawn failure".to_owned());
+			std::process::abort();
 		}
 	}
 }
