@@ -111,7 +111,9 @@ pub fn daily() {
 				let mut bt_id = shift.bartender.to_string();
 				for bartender in &bartenders {
 					if &bartender.0 == &shift.bartender {
-						bt_id = format!("<@{}>", bartender.1.to_string());
+						if bartender.1 != 0 {
+							bt_id = format!("<@{}>", bartender.1.to_string());
+						}
 						break;
 					}
 				}
