@@ -116,11 +116,21 @@ impl EventHandler for Handler {
 		}
 	}
 
-	async fn message(&self, _ctx: Context, msg: Message) {
+	async fn message(&self, ctx: Context, msg: Message) {
 		if msg.author.id == UserId(97802694302896128) {
 			match &msg.content[..] {
-				"k!weekly" => schedule_notify::weekly(),
-				"k!daily" => schedule_notify::daily(),
+				"k!weekly" => {
+					schedule_notify::weekly();
+					let _ = msg.reply(ctx.http, "weekly() invoked").await;
+				}
+				"k!daily" => {
+					schedule_notify::daily();
+					let _ = msg.reply(ctx.http, "daily() invoked").await;
+				}
+				"k!ll" => {
+					let _ = msg.reply(ctx.http, "Aborting...").await;
+					std::process::abort();
+				}
 				_ => (),
 			}
 		}
