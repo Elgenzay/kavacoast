@@ -117,8 +117,12 @@ impl EventHandler for Handler {
 	}
 
 	async fn message(&self, _ctx: Context, msg: Message) {
-		if msg.content == "k!cycle" && msg.author.id == UserId(97802694302896128) {
-			schedule_notify::weekly();
+		if msg.author.id == UserId(97802694302896128) {
+			match &msg.content[..] {
+				"k!weekly" => schedule_notify::weekly(),
+				"k!daily" => schedule_notify::daily(),
+				_ => (),
+			}
 		}
 	}
 
