@@ -20,7 +20,7 @@ On Windows:
 
 Download Rust: https://www.rust-lang.org/learn/get-started
 
-Download the MySQL `web-community` version: https://dev.mysql.com/downloads/installer/.
+Download the MySQL `web-community` version: https://dev.mysql.com/downloads/installer/
 
 I personally use the MySQL **server only** on Windows in favor of using [DBeaver](https://dbeaver.io/) for database management.  
 I'm using the **Development Computer** config type and left ports closed.
@@ -50,10 +50,14 @@ port = 80
 limits = { form = "64 kB", json = "1 MiB" }
 ```
 
-## Create Bot Config file
-Create `kava.elg.gg/bot/BotConfig.json`
+## Create config files
+Create files:  
+`kava.elg.gg/bot/BotConfig.json` and  
+`kava.elg.gg/web/static/resources/json/PublicData.json`
 
-A reference file is available at `kava.elg.gg/bot/BotConfig_sample.json`
+Reference files are available at:  
+`kava.elg.gg/bot/BotConfig_sample.json` and  
+`kava.elg.gg/web/static/resources/json/PublicData_sample.json`, respectively.
 
 ## Create the MySQL database & user
 Run in `$ mysql`:
@@ -113,7 +117,6 @@ Create `kava.elg.gg/.env`:
 ```env
 BOT_TOKEN = "{BOT_TOKEN}"
 WEBHOOK_URL = "{WEBHOOK_URL}"
-ICON_URL = "https://kava.elg.gg/icon.png"
 DOMAIN = "{DOMAIN}"
 MYSQL_PASS = "{MYSQL_PASS}"
 DISCORD_INVITE_LINK = "{DISCORD_INVITE_LINK}"
@@ -138,6 +141,9 @@ If you're testing locally, you're done setting up.
 If you're setting up on a server and want it to stay running, continue reading.
 
 ## Create systemd services
+
+This section assumes a project directory at `/kava.elg.gg/`.
+
 Create `/etc/systemd/system/kava_web.service`:
 ```
 [Unit]
@@ -148,11 +154,11 @@ StartLimitIntervalSec=0
 
 [Service]
 User=root
-WorkingDirectory=/kava/web
+WorkingDirectory=/kava.elg.gg/web
 Environment="ROCKET_ENV=prod"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
-ExecStart=/kava/web/target/release/web
+ExecStart=/kava.elg.gg/web/target/release/web
 Restart=always
 RestartSec=5
 
@@ -169,11 +175,11 @@ StartLimitIntervalSec=0
 
 [Service]
 User=root
-WorkingDirectory=/kava/https-redirect
+WorkingDirectory=/kava.elg.gg/https-redirect
 Environment="ROCKET_ENV=prod"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
-ExecStart=/kava/target/release/https-redirect
+ExecStart=/kava.elg.gg/target/release/https-redirect
 Restart=always
 RestartSec=5
 
@@ -189,8 +195,8 @@ StartLimitIntervalSec=0
 
 [Service]
 User=root
-WorkingDirectory=/kava/bot
-ExecStart=/kava/target/release/bot
+WorkingDirectory=/kava.elg.gg/bot
+ExecStart=/kava.elg.gg/target/release/bot
 Restart=always
 RestartSec=5
 
