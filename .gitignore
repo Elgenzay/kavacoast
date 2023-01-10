@@ -1,5 +1,6 @@
 target/
 Cargo.lock
+Rocket.toml
 .env
 /sh/run-*
 /tls/fullchain.pem
