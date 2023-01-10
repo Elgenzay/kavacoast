@@ -4,7 +4,6 @@ This is a [Rocket](https://github.com/SergioBenitez/Rocket/) website and [Sereni
 The website and Discord invite is at https://kava.elg.gg
 
 # Setup
-NOTE: THIS GUIDE IS OUTDATED
 
 If you want to try/implement/modify/contribute to/study it, here's a guide for setting up the environment.
 
@@ -24,23 +23,24 @@ Download Rust: https://www.rust-lang.org/learn/get-started
 Download the MySQL `web-community` version: https://dev.mysql.com/downloads/installer/.
 
 I personally use the MySQL **server only** on Windows in favor of using [DBeaver](https://dbeaver.io/) for database management.  
-I'm using the **Development Computer** config type and left ports closed. I did not create a Windows service.
+I'm using the **Development Computer** config type and left ports closed.
 
 
 ## Clone and build
 `cd` to your preferred project directory and run:
 ```sh
 $ git clone git@github.com:Elgenzay/kava.elg.gg.git
-$ ./kava.elg.gg/sh/build-release.sh
+$ cd kava.elg.gg/
+$ cargo build --release
 ```
 
 ## Configure TLS (or don't)
 ### With TLS:
 [Get your certificate](https://certbot.eff.org/) and run:
 ```sh
-$ cd ./kava.elg.gg/tls
-$ ln -s /etc/letsencrypt/live/{DOMAIN}/fullchain.pem ./fullchain.pem
-$ ln -s /etc/letsencrypt/live/{DOMAIN}/privkey.pem ./privkey.pem
+$ cd tls/
+$ ln -s /etc/letsencrypt/live/{DOMAIN}/fullchain.pem fullchain.pem
+$ ln -s /etc/letsencrypt/live/{DOMAIN}/privkey.pem privkey.pem
 ```
 ### Without TLS:
 Change the contents of `kava.elg.gg/web/Rocket.toml` to:
@@ -59,14 +59,48 @@ A reference file is available at `kava.elg.gg/bot/BotConfig_sample.json`
 Run in `$ mysql`:
 ```mysql
 CREATE DATABASE `kava`;
-CREATE TABLE kava.`bartenders` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+```
+Create tables:
+```mysql
+CREATE TABLE `bartenders` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
-  `hash` varchar(100) NOT NULL,
+  `hash` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '0',
+  `discord_id` bigint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`),
   UNIQUE KEY `name_UNIQUE` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `log_queue` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `guild_id` bigint unsigned NOT NULL,
+  `ch_id` bigint unsigned NOT NULL,
+  `msg` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `reactions` json NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `schedule` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `location` varchar(100) DEFAULT NULL,
+  `sun1` json DEFAULT NULL,
+  `mon1` json DEFAULT NULL,
+  `tue1` json DEFAULT NULL,
+  `wed1` json DEFAULT NULL,
+  `thu1` json DEFAULT NULL,
+  `fri1` json DEFAULT NULL,
+  `sat1` json DEFAULT NULL,
+  `sun2` json DEFAULT NULL,
+  `mon2` json DEFAULT NULL,
+  `tue2` json DEFAULT NULL,
+  `wed2` json DEFAULT NULL,
+  `thu2` json DEFAULT NULL,
+  `fri2` json DEFAULT NULL,
+  `sat2` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `schedule_un` (`location`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
 Password here should be the same as the `MYSQL_PASS` value in `/kava/.env` in the next step:
 ```mysql
@@ -82,6 +116,11 @@ WEBHOOK_URL = "{WEBHOOK_URL}"
 ICON_URL = "https://kava.elg.gg/icon.png"
 DOMAIN = "{DOMAIN}"
 MYSQL_PASS = "{MYSQL_PASS}"
+DISCORD_INVITE_LINK = "{DISCORD_INVITE_LINK}"
+DISCORD_LOG_CHANNEL_ID = "{DISCORD_LOG_CHANNEL_ID}"
+DISCORD_ERROR_CHANNEL_ID = "{DISCORD_ERROR_CHANNEL_ID}"
+DISCORD_SCHEDULE_CHANNEL_ID = "{DISCORD_SCHEDULE_CHANNEL_ID}"
+DISCORD_GUILD_ID = "{DISCORD_GUILD_ID}"
 ```
 `DOMAIN` is not necessary when running locally.
 
@@ -90,19 +129,15 @@ You can get a `BOT_TOKEN` from the [Discord Developer Portal](https://discord.co
 You can generate a `WEBHOOK_URL` in the Discord app within a text channel's settings under **Integrations**.  
 It looks like `https://discord.com/api/webhooks/...`
 
-## Create run scripts (for development server)
-Create `/kava/sh/run-web.sh`:
-```sh
-cd /kava/web
-ROCKET_ADDRESS={IP_HERE} cargo run
-```
-Create `/kava/sh/run-redirect.sh` (unless running locally):
-```sh
-cd /kava/https-redirect
-ROCKET_ADDRESS={IP_HERE} cargo run
-```
+`DISCORD_INVITE_LINK` is where the /join page redirects to, and looks like `https://discord.gg/...`. Make sure it's set to **not** expire.
 
-## Create systemd services (for production server)
+Channel/guild IDs can be copied from the context menu by right-clicking channels/guilds with developer mode enabled:  
+**User Settings > App Settings > Advanced > Developer mode**
+
+If you're testing locally, you're done setting up.  
+If you're setting up on a server and want it to stay running, continue reading.
+
+## Create systemd services
 Create `/etc/systemd/system/kava_web.service`:
 ```
 [Unit]
@@ -138,7 +173,7 @@ WorkingDirectory=/kava/https-redirect
 Environment="ROCKET_ENV=prod"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
-ExecStart=/kava/https-redirect/target/release/https-redirect
+ExecStart=/kava/target/release/https-redirect
 Restart=always
 RestartSec=5
 
@@ -155,7 +190,7 @@ StartLimitIntervalSec=0
 [Service]
 User=root
 WorkingDirectory=/kava/bot
-ExecStart=/kava/bot/target/release/kavabot
+ExecStart=/kava/target/release/bot
 Restart=always
 RestartSec=5
 
