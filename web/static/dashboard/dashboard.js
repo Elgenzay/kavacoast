@@ -96,12 +96,6 @@ class Dashboard {
 				window.username = p.username;
 				window.password = p.password;
 				Dashboard.get_schedule();
-				document.getElementById("content").style.visibility = "visible";
-				Request.get("/resources/json/PublicData.json").then(function (e) {
-					if (e.target.status == 200) {
-						Dashboard.processpubdata(JSON.parse(e.target.response));
-					}
-				}, function (e) { });
 				return true;
 			}
 		}, function (e) {
@@ -115,6 +109,7 @@ class Dashboard {
 	}
 
 	static save_schedule() {
+		document.getElementById("content").style.visibility = "hidden";
 		let request = JSON.stringify(
 			{
 				"verify": {
@@ -143,7 +138,12 @@ class Dashboard {
 		});
 		Request.post("/api/schedule_get", request).then(function (e) {
 			if (e.target.status == 200) {
-				console.log(JSON.parse(e.target.response));
+				document.getElementById("content").style.visibility = "visible";
+				Request.get("/resources/json/PublicData.json").then(function (e) {
+					if (e.target.status == 200) {
+						Dashboard.processpubdata(JSON.parse(e.target.response));
+					}
+				}, function (e) { });
 				if (window.scheduledata_initialstr) {
 					if (window.scheduledata_initialstr !== e.target.response) {
 						window.alert("Data has changed since page load. Someone else may have modified the schedule. Try again.");
