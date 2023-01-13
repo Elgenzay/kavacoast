@@ -11,9 +11,11 @@
 	<link rel="stylesheet" href="style.css">
 	<script src="resources/js/copy.js"></script>
 	<script src="resources/js/fadein.js"></script>
+	<script src="resources/js/background.js"></script>
 	<script>
 		window.onload = () => {
 			new ElementFadeIn(document.getElementById("title"));
+			new Background(document.getElementById("bgcanvas"));
 		};
 	</script>
 </head>
@@ -54,6 +56,7 @@
 			</div>
 		</div>
 	</div>
+	<canvas id="bgcanvas"></canvas>
 </body>
 
 </html>
