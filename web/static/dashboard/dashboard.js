@@ -1,9 +1,6 @@
 class Dashboard {
 	constructor() {
-		if (!this.is_valid_login()) {
-			Dashboard.logout();
-			return;
-		}
+		this.check_valid_login();
 	}
 
 	static processpubdata(pubdata) {
@@ -83,10 +80,10 @@ class Dashboard {
 		shift.bartender = window.username;
 	}
 
-	is_valid_login() {
+	check_valid_login() {
 		let login = sessionStorage.getItem("login");
 		if (!login) {
-			return false;
+			Dashboard.logout();
 		}
 		return Request.post("/api/auth", login).then(function (e) {
 			if (e.target.status == 200) {
@@ -96,10 +93,11 @@ class Dashboard {
 				window.username = p.username;
 				window.password = p.password;
 				Dashboard.get_schedule();
-				return true;
+			} else {
+				Dashboard.logout();
 			}
 		}, function (e) {
-			return false
+			Dashboard.logout();
 		});
 	}
 
@@ -155,9 +153,50 @@ class Dashboard {
 					window.scheduledata = JSON.parse(e.target.response);
 					window.scheduledata_initialstr = e.target.response;
 				}
-				return true;
+			} else {
+				Dashboard.logout();
 			}
 		}, function (e) {
+			Dashboard.logout();
+		});
+	}
+
+	static change_password_window(show) {
+		if (show) {
+			document.getElementById("change_pass_wrapper").style.visibility = "visible";
+		} else {
+			document.getElementById("change_pass_wrapper").style.visibility = "hidden";
+			document.getElementById("password_window_error").innerText = "";
+		}
+	}
+
+	static change_password() {
+		let new_pass = document.getElementById("newpassword").value;
+		let err_elem = document.getElementById("password_window_error");
+		document.getElementById("password_window_success").style.display = "none";
+		if (!new_pass) {
+			err_elem.innerText = "Password field empty";
+			return;
+		}
+		if (new_pass !== document.getElementById("confirmnewpassword").value) {
+			err_elem.innerText = "Passwords don't match";
+			return;
+		}
+		err_elem.innerText = "";
+		let request = JSON.stringify({
+			"verify": {
+				"username": window.username,
+				"password": window.password
+			},
+			"new_pass": new_pass
+		});
+		Request.post("/api/change_password", request).then(function (e) {
+			if (e.target.status == 200) {
+				document.getElementById("password_window").style.display = "none";
+				document.getElementById("password_window_success").style.display = "flex";
+			}
+		}, function (e) {
+			document.getElementById("password_window_error").innerText = "Unexpected error";
 			console.error("Error: " + e.target.status);
 			console.error(e.target.response);
 			return false;
