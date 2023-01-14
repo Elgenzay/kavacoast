@@ -1,8 +1,3 @@
-#content {
-	visibility: hidden;
-}
-
-
 td {
 	width: 150px;
 }
@@ -12,16 +7,8 @@ select {
 	width: 100%;
 }
 
-button {
-	background-color: #000;
-	border: 1px solid #1F8974;
-	color: #1F8974;
-	cursor: pointer;
-	padding: 6px;
-}
-
-button:hover {
-	color: #fff;
+#content {
+	visibility: hidden;
 }
 
 #change_pass_wrapper{

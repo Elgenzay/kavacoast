@@ -1,3 +1,15 @@
+p {
+	margin: 50px;
+}
+
+label {
+	width: 100px;
+}
+
+#content {
+	visibility: hidden;
+}
+
 .form-wrapper {
 	display: flex;
 	justify-content: center;
@@ -22,16 +34,4 @@
 
 .error-text {
 	color: crimson;
-}
-
-p {
-	margin: 50px;
-}
-
-label {
-	width: 100px;
-}
-
-#content {
-	visibility: hidden;
 }
