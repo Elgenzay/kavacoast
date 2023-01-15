@@ -44,12 +44,11 @@ impl Logger {
 
 	fn log(&self, msg: String, guild_id: &String, ch_id: &String, reactions: Vec<&String>) {
 		println!("{}", msg);
-		match get_mysql_connection().unwrap().exec_drop(
+		if let Err(e) = get_mysql_connection().unwrap().exec_drop(
 			"INSERT INTO log_queue (guild_id, ch_id, msg, reactions) VALUES (?,?,?,?)",
 			(guild_id, ch_id, msg, json!(reactions)),
 		) {
-			Ok(_) => (),
-			Err(e) => println!("Insert error (nonfatal): {}", e.to_string()),
+			println!("Insert error (nonfatal): {}", e.to_string());
 		}
 	}
 }
