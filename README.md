@@ -217,5 +217,3 @@ If running with TLS:
 $ systemctl enable kava_redirect
 $ systemctl start kava_redirect
 ```
-
-Note: The project is still under active development.
