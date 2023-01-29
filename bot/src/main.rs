@@ -242,12 +242,11 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 			Ok(())
 		}
 		.await;
-	match result {
-		Ok(_) => (),
-		Err(e) => get_state(&ctx)
+	if let Err(e) = result {
+		get_state(&ctx)
 			.await
 			.logger
-			.log_error(format!("Error on reaction update: {}", e.to_string())),
+			.log_error(format!("Error on reaction update: {}", e.to_string()));
 	}
 }
 
@@ -346,9 +345,8 @@ async fn tick(ctx: &Context) {
 		Some(v) => v,
 		None => return,
 	};
-	match conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
-		Ok(_) => (),
-		Err(e) => println!("MySQL delete error: {}", e.to_string()),
+	if let Err(e) = conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
+		println!("MySQL delete error: {}", e.to_string());
 	}
 	let guild_channel = GuildChannel::convert(
 		ctx,
