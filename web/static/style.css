@@ -34,8 +34,7 @@
 
 #discord_widget_container {
 	display: flex;
-	margin-bottom: 50px;
-	margin-left: 50px;
+	margin: 50px;
 }
 
 @media (max-width: 1550px) {
