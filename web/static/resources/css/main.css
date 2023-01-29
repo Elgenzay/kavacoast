@@ -70,13 +70,17 @@ a:hover {
 	z-index: 100;
 }
 
-.main-content>* {
+.main-content > * {
 	margin: 30px;
 }
 
-.content-wrapper {
+.full-screen {
 	align-items: center;
 	display: flex;
 	height: 100%;
 	justify-content: center;
+	left: 0;
+	position: fixed;
+	top: 0;
+	width: 100%;
 }
