@@ -15,7 +15,7 @@ impl Logger {
 		dotenvy::dotenv().ok();
 		Logger {
 			guild_id: std::env::var("DISCORD_GUILD_ID")
-				.expect("Missing environment variable: DISCORD_LOG_CHANNEL_ID"),
+				.expect("Missing environment variable: DISCORD_GUILD_ID"),
 			ch_id_error: std::env::var("DISCORD_ERROR_CHANNEL_ID")
 				.expect("Missing environment variable: DISCORD_ERROR_CHANNEL_ID"),
 			ch_id_generic: std::env::var("DISCORD_LOG_CHANNEL_ID")
