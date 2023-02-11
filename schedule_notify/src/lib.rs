@@ -77,7 +77,6 @@ pub fn daily() {
 	let mut any = false;
 	let mut reactions = vec![];
 	let mut message = String::new();
-	message.push_str("@silent ");
 	message.push_str(&daymeta.friendly_name);
 	message.push_str("\n-  -  -  -  -  -  -  -  -  -");
 	for loc in row.locations {
