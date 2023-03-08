@@ -76,6 +76,9 @@ class Dashboard {
 				location_data.shifts[s].bartender = "";
 			}
 		}
+		if (shift == "") {
+			return;
+		}
 		var shift = Dashboard.get_by_name(location_data.shifts, shift);
 		shift.bartender = window.username;
 	}
