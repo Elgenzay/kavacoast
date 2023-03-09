@@ -1,6 +1,12 @@
 # kava.elg.gg
 This is a [Rocket](https://github.com/SergioBenitez/Rocket/) website and [Serenity](https://github.com/serenity-rs/serenity) Discord bot for a kava bar community in South Florida.
 
+This project includes:
+- A landing page
+- A dashboard that allows bartenders to log in and update their schedules
+- A Discord bot that announces which bartenders are working which shift at which location every day  
+(if any bartenders are working that day)
+
 The website and Discord invite is at https://kava.elg.gg
 
 # Setup
@@ -24,6 +30,8 @@ Download the MySQL `web-community` version: https://dev.mysql.com/downloads/inst
 
 I personally use the MySQL **server only** on Windows in favor of using [DBeaver](https://dbeaver.io/) for database management.  
 I'm using the **Development Computer** config type and left ports closed.
+
+The remainder of this guide can be followed without TLS with [Git Bash](https://git-scm.com/downloads) when setting up a local development environment on Windows.
 
 
 ## Clone and build
@@ -106,11 +114,21 @@ CREATE TABLE `schedule` (
   UNIQUE KEY `schedule_un` (`location`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
+
 Password here should be the same as the `MYSQL_PASS` value in `/kava/.env` in the next step:
 ```mysql
 CREATE USER 'kava'@'%' IDENTIFIED BY '{MYSQL_PASS}';
 GRANT ALL PRIVILEGES ON kava.* TO 'kava'@'%';
 ```
+
+When setting up, you will need to populate the `id` and `location` fields for each location you want to add.  
+The `location` fields should match the `name` value of the corresponding shift within `kava.elg.gg/web/static/resources/json/PublicData.json`.  
+This is an identifier string, rather than a friendly name. It won't be visible to end users.  
+After setting up, run the `k!weekly` bot command twice to initialize the remaining fields.
+
+To add bartenders, populate the `id` and `name` fields for each user, and set `hash` and `discord_id` to `0`.  
+When `hash` is `0`, any password is valid when logging in.  
+After the user is logged in, they can change their password on the dashboard.
 
 ## Set environment variables
 Create `kava.elg.gg/.env`:
