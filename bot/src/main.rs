@@ -117,7 +117,13 @@ impl EventHandler for Handler {
 	}
 
 	async fn message(&self, ctx: Context, msg: Message) {
-		if msg.author.id == UserId(97802694302896128) {
+		if msg.author.id
+			== UserId(
+				std::env::var("ADMIN_ID")
+					.expect("Missing environment variable: ADMIN_ID")
+					.parse()
+					.expect("Error parsing environment variable: ADMIN_ID"),
+			) {
 			match &msg.content[..] {
 				"k!weekly" => {
 					schedule_notify::weekly();
