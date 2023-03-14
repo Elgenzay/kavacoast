@@ -5,7 +5,7 @@ This project includes:
 - A landing page
 - A dashboard that allows bartenders to log in and update their schedules
 - A Discord bot that announces which bartenders are working which shift at which location every day  
-(if any bartenders are working that day)
+(if any bartenders are working that day) and automatically assigns roles for reactions on specified messages
 
 The website and Discord invite is at https://kava.elg.gg
 
