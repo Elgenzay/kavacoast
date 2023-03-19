@@ -108,14 +108,21 @@ pub fn daily() {
 						"schedule_notify/src/lib.rs: get_shift_by_name returned None".to_owned(),
 					),
 				};
-				let mut bt_id = shift.bartender.to_string();
+				let mut bt_id = String::new();
+				let mut has_discord = false;
 				for bartender in &bartenders {
 					if &bartender.0 == &shift.bartender {
 						if bartender.1 != 0 {
 							bt_id = format!("<@{}>", bartender.1.to_string());
+							has_discord = true;
 						}
 						break;
 					}
+				}
+				if !has_discord {
+					let bartender = shift.bartender.to_string();
+					let mut chars = bartender.chars();
+					bt_id = chars.next().unwrap().to_uppercase().to_string() + chars.as_str();
 				}
 				message.push_str(
 					&format!(
