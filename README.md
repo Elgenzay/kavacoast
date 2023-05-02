@@ -177,7 +177,7 @@ WorkingDirectory=/kava.elg.gg/web
 Environment="ROCKET_ENV=prod"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
-ExecStart=/kava.elg.gg/web/target/release/web
+ExecStart=/kava.elg.gg/target/release/web
 Restart=always
 RestartSec=5
 
