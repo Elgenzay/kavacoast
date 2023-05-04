@@ -60,7 +60,7 @@ impl ScheduleWeek {
 	}
 
 	pub fn get_day(&mut self, day: &String) -> &mut ScheduleDay {
-		match &day[..] {
+		match day.as_str() {
 			"sun" => &mut self.sun,
 			"mon" => &mut self.mon,
 			"tue" => &mut self.tue,
@@ -84,12 +84,10 @@ impl ScheduleDay {
 	}
 
 	pub fn get_location_index_by_name(&mut self, name: String) -> usize {
-		let mut i = 0;
-		for location in &mut self.locations {
+		for (i, location) in self.locations.iter_mut().enumerate() {
 			if location.name == name {
 				return i;
 			}
-			i += 1;
 		}
 		self.locations.push(ScheduleLocation {
 			name,
@@ -107,12 +105,10 @@ pub struct ScheduleLocation {
 
 impl ScheduleLocation {
 	pub fn get_shift_index_by_name(&mut self, name: String) -> usize {
-		let mut i = 0;
-		for shift in &mut self.shifts {
+		for (i, shift) in self.shifts.iter_mut().enumerate() {
 			if shift.name == name {
 				return i;
 			}
-			i += 1;
 		}
 		self.shifts.push(ScheduleShift {
 			name,

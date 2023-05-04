@@ -15,9 +15,10 @@ pub fn run(options: &[CommandDataOption]) -> String {
 	let opt_str = match option {
 		CommandDataOptionValue::String(s) => s,
 		_ => panic!(),
-	};
+	}
+	.as_str();
 
-	match &opt_str[..] {
+	match opt_str {
 		"invoke_log" => {
 			let s = "Log test invoked.".to_owned();
 			Logger::new().log_message(s.to_owned());

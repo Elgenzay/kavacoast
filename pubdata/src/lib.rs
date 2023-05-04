@@ -22,20 +22,12 @@ pub struct PublicData {
 
 impl PublicData {
 	pub fn get_location_by_name(&self, name: &String) -> Option<&PubDataLocation> {
-		for location in &self.locations {
-			if &location.name == name {
-				return Some(location);
-			}
-		}
-		None
+		self.locations
+			.iter()
+			.find(|&location| &location.name == name)
 	}
 
 	pub fn get_shift_by_name(&self, name: &String) -> Option<&PubDataShift> {
-		for shift in &self.shifts {
-			if &shift.name == name {
-				return Some(shift);
-			}
-		}
-		None
+		self.shifts.iter().find(|&shift| &shift.name == name)
 	}
 }

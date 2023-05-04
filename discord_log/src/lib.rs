@@ -48,7 +48,13 @@ impl Logger {
 			"INSERT INTO log_queue (guild_id, ch_id, msg, reactions) VALUES (?,?,?,?)",
 			(guild_id, ch_id, msg, json!(reactions)),
 		) {
-			println!("Insert error (nonfatal): {}", e.to_string());
+			println!("Insert error (nonfatal): {}", e);
 		}
+	}
+}
+
+impl Default for Logger {
+	fn default() -> Self {
+		Self::new()
 	}
 }
