@@ -71,6 +71,7 @@ Reference files are available at:
 Run in `$ mysql`:
 ```mysql
 CREATE DATABASE `kava`;
+USE `kava`;
 ```
 Create tables:
 ```mysql
