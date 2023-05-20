@@ -55,7 +55,6 @@ Change the contents of `kava.elg.gg/web/Rocket.toml` to:
 ```toml
 [default]
 port = 80
-limits = { form = "64 kB", json = "1 MiB" }
 ```
 
 ## Create config files
@@ -226,14 +225,14 @@ WantedBy=multi-user.target
 
 Start the services:
 ```sh
-$ systemctl enable kava_web
-$ systemctl enable kava_bot
-$ systemctl start kava_web
-$ systemctl start kava_bot
+$ systemctl enable kava_web.service
+$ systemctl enable kava_bot.service
+$ systemctl start kava_web.service
+$ systemctl start kava_bot.service
 ```
 
 If running with TLS:
 ```sh
-$ systemctl enable kava_redirect
-$ systemctl start kava_redirect
+$ systemctl enable kava_redirect.service
+$ systemctl start kava_redirect.service
 ```
