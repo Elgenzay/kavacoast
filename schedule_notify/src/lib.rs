@@ -78,7 +78,7 @@ pub fn daily() {
 	let mut reactions = vec![];
 	let mut message = String::new();
 	message.push_str(&daymeta.friendly_name);
-	message.push_str("\n-  -  -  -  -  -  -  -  -  -");
+	message.push_str("\n\\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-");
 	for loc in row.locations {
 		let mut has_bartender = false;
 		for shift in &loc.shifts {
