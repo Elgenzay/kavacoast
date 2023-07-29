@@ -1,6 +1,9 @@
 [default]
-port = 443
+port = 80
 
-[default.tls]
-certs = "../tls/fullchain.pem"
-key = "../tls/privkey.pem"
+# [default]
+# port = 443
+# 
+# [default.tls]
+# certs = "../tls/fullchain.pem"
+# key = "../tls/privkey.pem"

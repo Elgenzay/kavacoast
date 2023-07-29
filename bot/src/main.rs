@@ -1,9 +1,6 @@
 mod cmds;
 
 use chrono::{Datelike, TimeZone, Utc, Weekday};
-use discord_log::Logger;
-use kava_mysql::get_mysql_connection;
-use mysql::prelude::Queryable;
 use serde::{Deserialize, Serialize};
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
@@ -14,7 +11,7 @@ use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
 use serenity::model::prelude::command::Command;
 use serenity::model::prelude::interaction::{Interaction, InteractionResponseType};
-use serenity::model::prelude::{ChannelId, GuildChannel, GuildId, RoleId, UserId};
+use serenity::model::prelude::{RoleId, UserId};
 use serenity::prelude::Mutex;
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
@@ -39,8 +36,6 @@ impl TypeMapKey for BotData {
 struct BotState {
 	initialized: bool,
 	data: JsonData,
-	logger: Logger,
-	weekday: Weekday,
 }
 
 impl BotState {
@@ -48,8 +43,6 @@ impl BotState {
 		BotState {
 			initialized: false,
 			data: JsonData::new(),
-			logger: Logger::new(),
-			weekday: Weekday::Sun,
 		}
 	}
 }
@@ -96,7 +89,6 @@ impl EventHandler for Handler {
 		if let Interaction::ApplicationCommand(command) = interaction {
 			let content = match command.data.name.as_str() {
 				"ping" => cmds::ping::run(&command.data.options),
-				"debug" => cmds::debug::run(&command.data.options),
 				_ => String::new(),
 			};
 			if let Err(e) = command
@@ -107,11 +99,11 @@ impl EventHandler for Handler {
 				})
 				.await
 			{
-				get_state(&ctx).await.logger.log_error(format!(
+				eprintln!(
 					"Error responding to command /{}: {}",
 					command.data.name.as_str(),
 					e
-				));
+				);
 			}
 		}
 	}
@@ -125,14 +117,6 @@ impl EventHandler for Handler {
 					.expect("Error parsing environment variable: ADMIN_ID"),
 			) {
 			match msg.content.as_str() {
-				"k!weekly" => {
-					schedule_notify::weekly();
-					let _ = msg.reply(ctx.http, "weekly() invoked").await;
-				}
-				"k!daily" => {
-					schedule_notify::daily();
-					let _ = msg.reply(ctx.http, "daily() invoked").await;
-				}
 				"k!ll" => {
 					let _ = msg.reply(ctx.http, "Aborting...").await;
 					std::process::abort();
@@ -154,16 +138,11 @@ impl EventHandler for Handler {
 		println!("{} is connected!", ready.user.name);
 		let state = get_state(&ctx).await;
 		let cmd_register = Command::set_global_application_commands(&ctx.http, |commands| {
-			commands
-				.create_application_command(|command| cmds::ping::register(command))
-				.create_application_command(|command| cmds::debug::register(command))
+			commands.create_application_command(|command| cmds::ping::register(command))
 		})
 		.await;
 		if let Err(e) = cmd_register {
-			state
-				.logger
-				.log_error(format!("Error registering commands: {}", e));
-			std::process::abort();
+			panic!("Error registering commands: {}", e);
 		};
 
 		let task = async move {
@@ -176,10 +155,7 @@ impl EventHandler for Handler {
 		};
 
 		if task::spawn(task).await.is_err() {
-			state
-				.logger
-				.log_error("Tokio task spawn failure".to_owned());
-			std::process::abort();
+			panic!("Tokio task spawn failure");
 		}
 	}
 }
@@ -247,10 +223,7 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 		}
 		.await;
 	if let Err(e) = result {
-		get_state(&ctx)
-			.await
-			.logger
-			.log_error(format!("Error on reaction update: {}", e));
+		eprintln!("Error on reaction update: {}", e);
 	}
 }
 
@@ -259,8 +232,7 @@ async fn get_state(ctx: &Context) -> BotState {
 	let state = match data.get::<BotData>() {
 		Some(v) => v,
 		None => {
-			println!("(Fatal) get_state(): State data not found");
-			std::process::abort();
+			panic!("(Fatal) get_state(): State data not found");
 		}
 	};
 	if state.initialized {
@@ -275,27 +247,20 @@ async fn reset_state(ctx: &Context) -> BotState {
 	let state = match data.get_mut::<BotData>() {
 		Some(v) => v,
 		None => {
-			println!("(Fatal) reset_state(): State data not found");
-			std::process::abort();
+			panic!("(Fatal) reset_state(): State data not found");
 		}
 	};
 	state.initialized = true;
 	let json_str = match fs::read_to_string("BotConfig.json") {
 		Ok(v) => v,
 		Err(_) => {
-			state
-				.logger
-				.log_error("(Fatal) Error reading BotConfig.json".to_owned());
-			std::process::abort();
+			panic!("(Fatal) Error reading BotConfig.json");
 		}
 	};
 	state.data = match serde_json::from_str(&json_str) {
 		Ok(v) => v,
-		Err(_) => state
-			.logger
-			.panic("Error parsing BotConfig.json".to_owned()),
+		Err(_) => panic!("Error parsing BotConfig.json"),
 	};
-	state.weekday = get_weekday(&state.data.offset_hours);
 	state.clone()
 }
 
@@ -321,66 +286,14 @@ async fn main() {
 	}
 }
 
-fn get_weekday(offset: &i64) -> Weekday {
+fn _get_weekday(offset: &i64) -> Weekday {
 	Utc.timestamp_opt(chrono::offset::Utc::now().timestamp() + (3600 * offset), 0)
 		.unwrap()
 		.date_naive()
 		.weekday()
 }
 
-async fn tick(ctx: &Context) {
-	let mut conn = match get_mysql_connection() {
-		Ok(v) => v,
-		Err(_) => return,
-	};
-	let state = get_state(ctx).await;
-	if get_weekday(&state.data.offset_hours) != state.weekday {
-		schedule_notify::daily();
-		if reset_state(ctx).await.weekday == Weekday::Sat {
-			schedule_notify::weekly();
-		}
-	}
-	let rows: Vec<(i64, u64, u64, String, String)> =
-		match conn.query("SELECT id, guild_id, ch_id, msg, reactions FROM log_queue LIMIT 1") {
-			Ok(v) => v,
-			Err(_) => return,
-		};
-	let row = match rows.first() {
-		Some(v) => v,
-		None => return,
-	};
-	if let Err(e) = conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
-		println!("MySQL delete error: {}", e);
-	}
-	let guild_channel = GuildChannel::convert(
-		ctx,
-		Some(GuildId(row.1)),
-		Some(ChannelId(row.2)),
-		&row.2.to_string(),
-	)
-	.await;
-
-	match guild_channel {
-		Ok(v) => match v.send_message(&ctx.http, |m| m.content(&row.3)).await {
-			Ok(msg) => {
-				let reactions: Vec<String> = match serde_json::from_str(&row.4) {
-					Ok(v) => v,
-					Err(_) => vec![],
-				};
-				for reaction in reactions {
-					if let Err(e) = msg
-						.react(&ctx.http, ReactionType::Unicode(reaction.to_string()))
-						.await
-					{
-						println!("Error reacting to message: {}", e);
-					};
-				}
-			}
-			Err(e) => println!("Error sending message: {}", e),
-		},
-		Err(e) => println!("Error finding guild channel from log_queue: {}", e),
-	}
-}
+async fn tick(_ctx: &Context) {}
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {

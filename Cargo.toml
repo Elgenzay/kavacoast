@@ -2,11 +2,6 @@
 
 members = [
     "bot",
-    "discord_log",
     "https-redirect",
-    "kava_mysql",
-    "pubdata",
-    "schedule",
-    "schedule_notify",
     "web",
 ]
