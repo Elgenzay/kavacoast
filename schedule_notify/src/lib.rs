@@ -51,34 +51,34 @@ pub fn daily() {
 			let mut day = ScheduleDay::empty();
 			for row in v {
 				let shifts: Vec<ScheduleShift> =
-					match serde_json::from_str(&row[daymeta.column_index][..]) {
+					match serde_json::from_str(&row[daymeta.column_index]) {
 						Ok(v) => v,
-						Err(_) => logger.panic(format!("daily(): Error parsing day")),
+						Err(_) => logger.panic("daily(): Error parsing day".to_owned()),
 					};
 				let loc = ScheduleLocation {
 					name: row[0].to_string(),
-					shifts: shifts,
+					shifts,
 				};
 				day.locations.push(loc);
 			}
 			day
 		}
 		Err(e) => {
-			logger.panic(format!("daily/src/main.rs Select Error: {}", e.to_string()));
+			logger.panic(format!("daily/src/main.rs Select Error: {}", e));
 		}
 	};
 
 	let bartenders: Vec<(String, u64)> = match conn.query("SELECT name, discord_id FROM bartenders")
 	{
 		Ok(v) => v,
-		Err(e) => logger.panic(format!("daily() MySQL select error: {}", e.to_string())),
+		Err(e) => logger.panic(format!("daily() MySQL select error: {}", e)),
 	};
 
 	let mut any = false;
 	let mut reactions = vec![];
 	let mut message = String::new();
 	message.push_str(&daymeta.friendly_name);
-	message.push_str("\n-  -  -  -  -  -  -  -  -  -");
+	message.push_str("\n\\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-  \\-");
 	for loc in row.locations {
 		let mut has_bartender = false;
 		for shift in &loc.shifts {
@@ -96,12 +96,12 @@ pub fn daily() {
 			};
 			reactions.push(&pubdataloc.emoji);
 			message.push_str("\n\n");
-			message.push_str(&pubdataloc.friendly_name[..]);
+			message.push_str(&pubdataloc.friendly_name);
 			for shift in loc.shifts {
 				if shift.bartender.is_empty() {
 					continue;
 				}
-				message.push_str("\n");
+				message.push('\n');
 				let pubdatashift = match pubdata.get_shift_by_name(&shift.name) {
 					Some(v) => v,
 					None => logger.panic(
@@ -111,9 +111,9 @@ pub fn daily() {
 				let mut bt_id = String::new();
 				let mut has_discord = false;
 				for bartender in &bartenders {
-					if &bartender.0 == &shift.bartender {
+					if bartender.0 == shift.bartender {
 						if bartender.1 != 0 {
-							bt_id = format!("<@{}>", bartender.1.to_string());
+							bt_id = format!("<@{}>", bartender.1);
 							has_discord = true;
 						}
 						break;
@@ -124,14 +124,10 @@ pub fn daily() {
 					let mut chars = bartender.chars();
 					bt_id = chars.next().unwrap().to_uppercase().to_string() + chars.as_str();
 				}
-				message.push_str(
-					&format!(
-						"{}:  {}  ({})",
-						&pubdatashift.friendly_name[..],
-						bt_id,
-						&pubdatashift.description
-					)[..],
-				);
+				message.push_str(&format!(
+					"{}:  {}  ({})",
+					&pubdatashift.friendly_name, bt_id, &pubdatashift.description
+				));
 			}
 		}
 	}
@@ -152,7 +148,7 @@ pub fn weekly() {
 		Ok(v) => v,
 		Err(e) => logger.panic(format!("weekly() MySQL connect error: {}", e)),
 	};
-	let w2: Vec<(
+	type EightStrings = (
 		String,
 		String,
 		String,
@@ -161,7 +157,8 @@ pub fn weekly() {
 		String,
 		String,
 		String,
-	)> = conn
+	);
+	let w2: Vec<EightStrings> = conn
 		.query_map(
 			"SELECT location, sun2, mon2, tue2, wed2, thu2, fri2, sat2 from schedule ORDER BY `id`",
 			|(location, sun2, mon2, tue2, wed2, thu2, fri2, sat2)| {

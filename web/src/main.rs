@@ -57,7 +57,7 @@ impl Credentials {
 			Err(e) => return Err((Status::InternalServerError, e.to_string())),
 		};
 		let passwordhash = passwordhashstring.password_hash();
-		let matches = Argon2::default().verify_password(&self.password.as_bytes(), &passwordhash);
+		let matches = Argon2::default().verify_password(self.password.as_bytes(), &passwordhash);
 		match matches {
 			Ok(_) => Ok(bartender),
 			Err(_) => Err((Status::Unauthorized, "Credentials invalid".to_owned())),
@@ -94,8 +94,8 @@ impl Bartender {
 			Err(_) => return Err((Status::InternalServerError, "MySQL error".to_owned())),
 		};
 		let result: Result<Vec<_>, mysql::Error> = conn.exec::<String, &str, (&str, &str)>(
-			&"UPDATE kava.`bartenders` SET `hash`=? WHERE `name`=?;".to_owned(),
-			(hash, &self.name[..]),
+			"UPDATE kava.`bartenders` SET `hash`=? WHERE `name`=?;",
+			(hash, &self.name),
 		);
 		match result {
 			Ok(_) => Ok(()),
@@ -118,7 +118,7 @@ fn change_password(request: Json<ChangePassRequest>) -> status::Custom<RawJson<S
 			Ok(v) => v,
 			Err(e) => return Err((Status::InternalServerError, e.to_string())),
 		};
-		bartender.update_hash(&password_hash.serialize().to_string())
+		bartender.update_hash(password_hash.serialize().as_str())
 	};
 	match result(request) {
 		Ok(_) => status::Custom(Status::Ok, RawJson("{\"success\":true}".to_owned())),

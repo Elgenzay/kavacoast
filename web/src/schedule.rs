@@ -36,7 +36,7 @@ pub fn schedule_update(request: Json<SchedulePostRequest>) -> status::Custom<Raw
 
 		for loc in &locations {
 			let mut new_row = ScheduleRow::empty(loc);
-			for week_i in vec![1, 2] {
+			for week_i in [1, 2] {
 				for day_i in ScheduleWeek::days() {
 					for day_loc in &request
 						.clone()
@@ -120,10 +120,8 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 			},
 		);
 
-		let week2_result: Result<
-			Vec<(String, String, String, String, String, String, String)>,
-			mysql::Error,
-		> = conn.query_map(
+		type SevenStrings = (String, String, String, String, String, String, String);
+		let week2_result: Result<Vec<SevenStrings>, mysql::Error> = conn.query_map(
 			"SELECT sun2, mon2, tue2, wed2, thu2, fri2, sat2 from schedule ORDER BY `id`",
 			|(sun2, mon2, tue2, wed2, thu2, fri2, sat2)| (sun2, mon2, tue2, wed2, thu2, fri2, sat2),
 		);
@@ -135,8 +133,7 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 		let w2 = week2_result.unwrap();
 
 		let mut rows = vec![];
-		let mut i = 0;
-		for row in w1 {
+		for (i, row) in w1.into_iter().enumerate() {
 			rows.push(ScheduleRow {
 				location: row.0,
 				sun1: row.1,
@@ -154,7 +151,6 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 				fri2: w2[i].5.to_string(),
 				sat2: w2[i].6.to_string(),
 			});
-			i += 1;
 		}
 		let mut schedule = Schedule::empty();
 		for row in &rows {
@@ -176,7 +172,7 @@ pub fn schedule_get(input_creds: Json<super::Credentials>) -> status::Custom<Raw
 				day_string.push_str(&week_i.to_string());
 				for row in &rows {
 					let shifts: Vec<ScheduleShift> =
-						match serde_json::from_str(row.get_day(&day_string[..])) {
+						match serde_json::from_str(row.get_day(&day_string)) {
 							Ok(v) => v,
 							Err(_) => {
 								return Err((

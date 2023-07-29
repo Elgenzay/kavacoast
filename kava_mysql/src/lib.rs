@@ -2,9 +2,8 @@ use mysql::{Pool, PooledConn};
 
 pub fn get_mysql_connection() -> Result<PooledConn, String> {
 	let pass = std::env::var("MYSQL_PASS").expect("Missing environment variable: MYSQL_PASS");
-	let url: &str =
-		&(String::from("mysql://kava:") + &pass + &String::from("@localhost:3306/kava"))[..];
-	let pool = match Pool::new(url) {
+	let url = format!("mysql://kava:{}@localhost:3306/kava", pass);
+	let pool = match Pool::new(url.as_str()) {
 		Ok(v) => v,
 		Err(e) => return Err(e.to_string()),
 	};

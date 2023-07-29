@@ -124,7 +124,7 @@ impl EventHandler for Handler {
 					.parse()
 					.expect("Error parsing environment variable: ADMIN_ID"),
 			) {
-			match &msg.content[..] {
+			match msg.content.as_str() {
 				"k!weekly" => {
 					schedule_notify::weekly();
 					let _ = msg.reply(ctx.http, "weekly() invoked").await;
@@ -162,20 +162,20 @@ impl EventHandler for Handler {
 		if let Err(e) = cmd_register {
 			state
 				.logger
-				.log_error(format!("Error registering commands: {}", e.to_string()));
+				.log_error(format!("Error registering commands: {}", e));
 			std::process::abort();
 		};
-		if task::spawn(async move {
+
+		let task = async move {
 			let mut interval =
 				time::interval(Duration::from_millis(state.data.tickrate_seconds * 1000));
 			loop {
 				interval.tick().await;
 				tick(&ctx).await;
 			}
-		})
-		.await
-		.is_err()
-		{
+		};
+
+		if task::spawn(task).await.is_err() {
 			state
 				.logger
 				.log_error("Tokio task spawn failure".to_owned());
@@ -192,7 +192,7 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 			let mut match_group_opt = None;
 			for group in groups {
 				if &group.message_id == msg_id {
-					match_group_opt = Some(group.clone());
+					match_group_opt = Some(group);
 					break;
 				}
 			}
@@ -221,7 +221,7 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 				Some(v) => v,
 				None => return Ok(()),
 			};
-			let user_id_str = &user_id.to_string()[..];
+			let user_id_str = &user_id.to_string();
 			let mut member =
 				match Member::convert(&ctx, react.guild_id, Some(react.channel_id), user_id_str)
 					.await
@@ -240,10 +240,8 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 				if let Err(e) = member.add_role(&ctx.http, RoleId(role_id)).await {
 					return Err(e.to_string());
 				};
-			} else {
-				if let Err(e) = member.remove_role(&ctx.http, RoleId(role_id)).await {
-					return Err(e.to_string());
-				};
+			} else if let Err(e) = member.remove_role(&ctx.http, RoleId(role_id)).await {
+				return Err(e.to_string());
 			}
 			Ok(())
 		}
@@ -252,7 +250,7 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 		get_state(&ctx)
 			.await
 			.logger
-			.log_error(format!("Error on reaction update: {}", e.to_string()));
+			.log_error(format!("Error on reaction update: {}", e));
 	}
 }
 
@@ -319,7 +317,7 @@ async fn main() {
 		.await
 		.expect("Error creating client");
 	if let Err(e) = client.start().await {
-		println!("Client error: {}", e.to_string());
+		println!("Client error: {}", e);
 	}
 }
 
@@ -335,7 +333,7 @@ async fn tick(ctx: &Context) {
 		Ok(v) => v,
 		Err(_) => return,
 	};
-	let state = get_state(&ctx).await;
+	let state = get_state(ctx).await;
 	if get_weekday(&state.data.offset_hours) != state.weekday {
 		schedule_notify::daily();
 		if reset_state(ctx).await.weekday == Weekday::Sat {
@@ -352,13 +350,13 @@ async fn tick(ctx: &Context) {
 		None => return,
 	};
 	if let Err(e) = conn.exec_drop("DELETE FROM log_queue WHERE id=?", (row.0,)) {
-		println!("MySQL delete error: {}", e.to_string());
+		println!("MySQL delete error: {}", e);
 	}
 	let guild_channel = GuildChannel::convert(
 		ctx,
 		Some(GuildId(row.1)),
 		Some(ChannelId(row.2)),
-		&row.2.to_string()[..],
+		&row.2.to_string(),
 	)
 	.await;
 
@@ -374,16 +372,13 @@ async fn tick(ctx: &Context) {
 						.react(&ctx.http, ReactionType::Unicode(reaction.to_string()))
 						.await
 					{
-						println!("Error reacting to message: {}", e.to_string());
+						println!("Error reacting to message: {}", e);
 					};
 				}
 			}
-			Err(e) => println!("Error sending message: {}", e.to_string()),
+			Err(e) => println!("Error sending message: {}", e),
 		},
-		Err(e) => println!(
-			"Error finding guild channel from log_queue: {}",
-			e.to_string()
-		),
+		Err(e) => println!("Error finding guild channel from log_queue: {}", e),
 	}
 }
 
