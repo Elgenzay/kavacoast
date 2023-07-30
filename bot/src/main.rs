@@ -1,3 +1,5 @@
+extern crate surreal_interface;
+
 mod cmds;
 
 use chrono::{Datelike, TimeZone, Utc, Weekday};

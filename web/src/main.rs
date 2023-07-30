@@ -1,3 +1,5 @@
+extern crate surreal_interface;
+
 use rocket::fs::{relative, NamedFile};
 use rocket::response::Redirect;
 use rocket::shield::Hsts;
