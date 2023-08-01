@@ -1,8 +1,9 @@
-extern crate surreal_interface;
+extern crate generic;
 
 mod cmds;
 
 use chrono::{Datelike, TimeZone, Utc, Weekday};
+use generic::Environment;
 use serde::{Deserialize, Serialize};
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
@@ -111,13 +112,13 @@ impl EventHandler for Handler {
 	}
 
 	async fn message(&self, ctx: Context, msg: Message) {
-		if msg.author.id
-			== UserId(
-				std::env::var("ADMIN_ID")
-					.expect("Missing environment variable: ADMIN_ID")
-					.parse()
-					.expect("Error parsing environment variable: ADMIN_ID"),
-			) {
+		let admin_id = Environment::new()
+			.admin_id
+			.val()
+			.parse::<u64>()
+			.expect("Invalid admin ID");
+
+		if msg.author.id == UserId(admin_id) {
 			match msg.content.as_str() {
 				"k!ll" => {
 					let _ = msg.reply(ctx.http, "Aborting...").await;
@@ -137,7 +138,7 @@ impl EventHandler for Handler {
 	}
 
 	async fn ready(&self, ctx: Context, ready: Ready) {
-		println!("{} is connected!", ready.user.name);
+		Environment::load_path("config.toml");
 		let state = get_state(&ctx).await;
 		let cmd_register = Command::set_global_application_commands(&ctx.http, |commands| {
 			commands.create_application_command(|command| cmds::ping::register(command))
@@ -159,6 +160,8 @@ impl EventHandler for Handler {
 		if task::spawn(task).await.is_err() {
 			panic!("Tokio task spawn failure");
 		}
+
+		println!("{} is connected!", ready.user.name);
 	}
 }
 
@@ -268,8 +271,10 @@ async fn reset_state(ctx: &Context) -> BotState {
 
 #[tokio::main]
 async fn main() {
-	dotenvy::dotenv().ok();
-	let token = std::env::var("BOT_TOKEN").expect("Missing environment variable: BOT_TOKEN");
+	Environment::load_path("config.toml");
+
+	let token = Environment::new().bot_token.val();
+
 	let intents = GatewayIntents::non_privileged()
 		| GatewayIntents::GUILD_MESSAGES
 		| GatewayIntents::GUILD_MESSAGE_REACTIONS

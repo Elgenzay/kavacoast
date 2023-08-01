@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master" }
-dotenvy = "0.15.7"
+generic = { path = "../generic" }

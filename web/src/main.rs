@@ -1,5 +1,6 @@
-extern crate surreal_interface;
+extern crate generic;
 
+use generic::Environment;
 use rocket::fs::{relative, NamedFile};
 use rocket::response::Redirect;
 use rocket::shield::Hsts;
@@ -18,8 +19,7 @@ pub async fn static_pages(path: PathBuf) -> Option<NamedFile> {
 
 #[rocket::get("/join")]
 pub async fn join() -> Redirect {
-	let inv = std::env::var("DISCORD_INVITE_LINK")
-		.expect("Missing environment variable: DISCORD_INVITE_LINK");
+	let inv = Environment::new().discord_invite_link.val();
 	Redirect::to(inv)
 }
 

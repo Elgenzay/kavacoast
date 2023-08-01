@@ -4,5 +4,5 @@ members = [
     "bot",
     "https-redirect",
     "web",
-    "surreal_interface",
+    "generic",
 ]
