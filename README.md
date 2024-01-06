@@ -174,7 +174,7 @@ StartLimitIntervalSec=0
 [Service]
 User=root
 WorkingDirectory=/kava.elg.gg/web
-Environment="ROCKET_ENV=prod"
+Environment="ROCKET_PROFILE=production"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
 ExecStart=/kava.elg.gg/target/release/web
@@ -195,7 +195,7 @@ StartLimitIntervalSec=0
 [Service]
 User=root
 WorkingDirectory=/kava.elg.gg/https-redirect
-Environment="ROCKET_ENV=prod"
+Environment="ROCKET_PROFILE=production"
 Environment="ROCKET_ADDRESS={IP_HERE}"
 Environment="ROCKET_LOG=critical"
 ExecStart=/kava.elg.gg/target/release/https-redirect
