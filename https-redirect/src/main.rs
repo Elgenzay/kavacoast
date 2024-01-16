@@ -1,10 +1,11 @@
+use generic::Environment;
 use rocket::response::Redirect;
 use std::path::PathBuf;
 
 #[rocket::get("/<path..>")]
 pub async fn redirect(path: PathBuf) -> Redirect {
 	let mut new_uri = String::from("https://");
-	let domain = std::env::var("DOMAIN").expect("Missing environment variable: DOMAIN");
+	let domain = Environment::new().domain.val();
 	new_uri.push_str(&domain);
 	new_uri.push_str(&path.into_os_string().into_string().unwrap());
 	Redirect::to(new_uri)
@@ -12,6 +13,6 @@ pub async fn redirect(path: PathBuf) -> Redirect {
 
 #[rocket::launch]
 fn rocket() -> _ {
-	dotenvy::dotenv().ok();
+	Environment::load_path("config.toml");
 	rocket::build().mount("/", rocket::routes![redirect])
 }

@@ -1,7 +1,6 @@
 target/
 Cargo.lock
-.env
-/sh/run-*
+/config.toml
 /tls/fullchain.pem
 /tls/privkey.pem
 /bot/BotConfig.json
