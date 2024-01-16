@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Login - Kava Coast</title>
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/resources/css/main.css">
+	<link rel="stylesheet" href="/resources/css/Roboto.css">
+	<link rel="stylesheet" href="/login/style.css">
+	<script src="/resources/js/fadein.js"></script>
+	<script src="/resources/js/background.js"></script>
+	<script src="/resources/js/request.js"></script>
+	<script src="/login/login.js"></script>
+	<script src="/resources/js/auth.js"></script>
+	<script>
+		var login;
+
+		window.onload = () => {
+			new ElementFadeIn(document.getElementById("title"));
+			new Background(document.getElementById("bgcanvas"));
+			login = new Login();
+		};
+	</script>
+</head>
+
+<body>
+	<div id="content" class="full-screen">
+		<div id="width-restraint">
+			<div class="links">
+				<span>
+					<a href="/">home</a>
+				</span>
+				<span>
+					<a href="/register">register</a>
+				</span>
+			</div>
+			<div id="title" data-fadein="Login"></div>
+			<div class="main-content">
+				<div class="form-wrapper">
+					<div class="form-fields-wrapper">
+						<div>
+							<label for="username">Username</label>
+							<input type="text" id="username" name="username" oninput="login.input('username')">
+						</div>
+						<div>
+							<label for="password">Password</label>
+							<input type="password" id="password" name="password" oninput="login.input('password')">
+						</div>
+					</div>
+					<div class="submit-wrapper">
+						<button id="submit" type="submit" onclick="login.submit()" disabled>Sign in</button>
+					</div>
+				</div>
+				<div id="error" class="error-text">
+				</div>
+			</div>
+		</div>
+	</div>
+	<canvas id="bgcanvas"></canvas>
+</body>
+
+</html>

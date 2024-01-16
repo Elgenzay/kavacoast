@@ -1,8 +1,27 @@
-[workspace]
+[package]
+name = "kavacoast"
+version = "2.0.0-alpha.0"
+edition = "2021"
 
-members = [
-    "bot",
-    "https-redirect",
-    "web",
-    "generic",
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
+serenity = { default-features = false, features = ["client", "gateway", "model", "rustls_backend", "cache", "http", "framework", "standard_framework"], version = "0.11.5"}
+serde = "1.0.195"
+serde_json = "1.0.111"
+dotenvy = "0.15.7"
+chrono = "0.4.31"
+surrealdb = "1.1.0"
+confy = "0.6.0"
+password-hash = "0.5.0"
+argon2 = "0.5.2"
+async-trait = "0.1.77"
+reqwest = "0.11.23"
+rocket = { version = "0.5.0", features = ["tls", "json"] } # merged features
+rand_core = { version = "0.6", features = ["std"] }
+pbkdf2 = "0.12.1"
+scrypt = "0.11.0"
+jsonwebtoken = "9.2.0"
+env_logger = "0.10.1"
+log = "0.4.20"

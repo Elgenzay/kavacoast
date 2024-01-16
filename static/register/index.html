@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register - Kava Coast</title>
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/resources/css/main.css">
+	<link rel="stylesheet" href="/resources/css/Roboto.css">
+	<link rel="stylesheet" href="/login/style.css">
+	<script src="/resources/js/fadein.js"></script>
+	<script src="/resources/js/background.js"></script>
+	<script src="/resources/js/request.js"></script>
+	<script src="/resources/js/auth.js"></script>
+	<script src="/register/register.js"></script>
+	<script>
+		var register;
+
+		window.onload = () => {
+			new ElementFadeIn(document.getElementById("title"));
+			new Background(document.getElementById("bgcanvas"));
+			register = new Register();
+		};
+	</script>
+</head>
+
+<body>
+	<div class="full-screen">
+		<div id="width-restraint">
+			<div class="links">
+				<span>
+					<a href="/">home</a>
+				</span>
+				<span>
+					<a href="/login">login</a>
+				</span>
+			</div>
+			<div id="title" data-fadein="Register"></div>
+			<div class="main-content">
+				<div class="form-wrapper">
+					<div class="form-fields-wrapper">
+						<div>
+							<label for="username">Username</label>
+							<input type="text" id="username" name="username" oninput="register.input('username')">
+						</div>
+						<div>
+							<label for="displayname">Display name</label>
+							<input type="text" id="displayname" name="displayname"
+								oninput="register.input('displayname')">
+						</div>
+						<div>
+							<label for="password">Password</label>
+							<input type="password" id="password" name="password" oninput="register.input('password')">
+						</div>
+						<div>
+							<label for="confirmpassword">Confirm Password</label>
+							<input type="password" id="confirmpassword" name="confirmpassword"
+								oninput="register.input('username')" onblur="register.input('username')">
+						</div>
+						<div class="submit-wrapper">
+							<button id="submit" type="submit" disabled onclick="register.submit()">Register</button>
+						</div>
+					</div>
+				</div>
+				<div id="error" class="error-text">
+				</div>
+			</div>
+		</div>
+	</div>
+	<canvas id="bgcanvas"></canvas>
+</body>
+
+</html>

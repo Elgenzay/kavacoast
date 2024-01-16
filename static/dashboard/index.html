@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Kava Coast</title>
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/resources/css/main.css">
+	<link rel="stylesheet" href="/resources/css/Roboto.css">
+	<script src="/resources/js/fadein.js"></script>
+	<script src="/resources/js/background.js"></script>
+	<script src="/resources/js/request.js"></script>
+	<script src="/resources/js/auth.js"></script>
+	<script src="/dashboard/dashboard.js"></script>
+	<script>
+		var dashboard;
+
+		window.onload = () => {
+			new ElementFadeIn(document.getElementById("title"));
+			new Background(document.getElementById("bgcanvas"));
+			dashboard = new Dashboard();
+		};
+	</script>
+</head>
+
+<body>
+	<div id="content" class="full-screen">
+		<div id="width-restraint">
+			<div class="links">
+				<span>
+					<a href="/">home</a>
+				</span>
+			</div>
+			<div id="title" data-fadein="Dashboard"></div>
+			<div class="main-content">
+				<div id="test">
+				</div>
+				<button onclick="Auth.logout()">Logout</button>
+			</div>
+		</div>
+	</div>
+	<canvas id="bgcanvas"></canvas>
+</body>
+
+</html>

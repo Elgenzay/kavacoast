@@ -1,0 +1,41 @@
+p {
+	margin: 50px;
+}
+
+label {
+	padding-right:16px;
+	text-align: right;
+	width: 150px;
+}
+
+input {
+	padding-left: 4px;
+	width: 200px;
+}
+
+.form-wrapper {
+	display: flex;
+	justify-content: center;
+}
+
+.form-fields-wrapper {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+}
+
+.form-fields-wrapper>div {
+	display: flex;
+	margin: 8px;
+}
+
+.submit-wrapper {
+	align-items: center;
+	display: flex;
+	margin: 10px;
+}
+
+.error-text {
+	color: crimson;
+	height: 40px;
+}
