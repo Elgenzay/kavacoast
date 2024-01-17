@@ -13,8 +13,13 @@ class Register {
 	}
 
 	input(id) {
-		if (id === "username") {
-			this.username_elem.value = Auth.format_username(this.username_elem.value);
+		switch (id) {
+			case "username":
+				this.username_elem.value = Auth.format_username(this.username_elem.value);
+				break;
+			case "displayname":
+				this.displayname_elem.value = this.displayname_elem.value.replace(/^\s+/, "");
+				break;
 		}
 
 		let username = this.username_elem.value;
@@ -58,7 +63,6 @@ class Register {
 				this.error_elem.innerText = generic_err_msg;
 			}
 		}).catch(error => {
-			console.error(error);
 			if (error.message) {
 				try {
 					let error_obj = JSON.parse(error.message);

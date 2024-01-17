@@ -49,6 +49,7 @@ pub async fn start_web() {
 				routes::token::token_form,
 				routes::check_token::check_token,
 				routes::users::register,
+				routes::users::get_self,
 			],
 		)
 		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))

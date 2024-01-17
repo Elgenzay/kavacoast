@@ -1,6 +1,9 @@
 class Dashboard {
 	constructor() {
-		Auth.refresh_token();
-		document.getElementById("test").innerText = "Logged in as " + Auth.get_cookie("username");
+		Auth.request("/api/users/me").then(response => {
+			let user = JSON.parse(response);
+			document.getElementById("test").innerText = "Logged in as " + user.display_name;
+			console.log(user);
+		});
 	}
 }

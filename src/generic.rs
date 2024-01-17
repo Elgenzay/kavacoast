@@ -183,6 +183,7 @@ impl<T> UUID<T> {
 		Ok(obj)
 	}
 
+	#[allow(dead_code)]
 	pub fn as_str(&self) -> Result<String, Error> {
 		let t = serde_json::to_value(self)?;
 		let t = t

@@ -42,28 +42,35 @@ class Auth {
 	}
 
 	static refresh_token() {
-		let refresh_token = Auth.get_cookie("refreshToken");
-		let username = Auth.get_cookie("username");
+		return new Promise((resolve, reject) => {
+			let refresh_token = Auth.get_cookie("refreshToken");
+			let username = Auth.get_cookie("username");
 
-		if (!refresh_token) {
-			Auth.logout("expired");
-		}
-
-		Request.post("/api/auth/token", {
-			"grant_type": "refresh_token",
-			"username": username,
-			"refresh_token": refresh_token
-		}).then(response => {
-			try {
-				let response_obj = JSON.parse(response);
-				Auth.store_tokens(response_obj);
-			} catch (error) {
+			if (!refresh_token) {
 				Auth.logout("expired");
+				reject("No refresh token");
+			} else {
+				Request.post("/api/auth/token", {
+					"grant_type": "refresh_token",
+					"username": username,
+					"refresh_token": refresh_token
+				}).then(response => {
+					try {
+						let response_obj = JSON.parse(response);
+						Auth.store_tokens(response_obj);
+						resolve(response_obj);
+					} catch (error) {
+						Auth.logout("expired");
+						reject(error);
+					}
+				}).catch(e => {
+					Auth.logout("expired");
+					reject(e);
+				});
 			}
-		}).catch(e => {
-			Auth.logout("expired");
 		});
 	}
+
 
 	static logout(reason) {
 		Auth.clear_tokens();
@@ -79,4 +86,29 @@ class Auth {
 			.replace(/[^a-z0-9]/gi, '_')
 			.toLowerCase()
 	}
+
+	static request(url, body, method = "GET", headers = {}) {
+		return new Promise((resolve, reject) => {
+			headers["Authorization"] = `Bearer ${Auth.get_cookie("accessToken")}`;
+			Request.send(url, body, method, headers).then(response => {
+				resolve(response);
+			}).catch(e => {
+				if (e.message === "Invalid Credentials") {
+					Auth.refresh_token().then(() => {
+						headers["Authorization"] = `Bearer ${Auth.get_cookie("accessToken")}`;
+						Request.send(url, body, method, headers).then(response => {
+							resolve(response);
+						}).catch(error => {
+							reject(error);
+						});
+					}).catch(error => {
+						reject(error);
+					});
+				} else {
+					reject(e);
+				}
+			});
+		});
+	}
+
 }

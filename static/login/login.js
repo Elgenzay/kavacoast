@@ -25,6 +25,10 @@ class Login {
 
 		let button_enabled = username !== "" && password !== "";
 		this.submit_elem.disabled = !button_enabled;
+
+		if (this.error_elem.innerText === "Invalid credentials") {
+			this.error_elem.innerText = "";
+		}
 	}
 
 	submit() {
@@ -44,7 +48,6 @@ class Login {
 				this.error_elem.innerText = generic_err_msg;
 			}
 		}).catch(error => {
-			console.error(error);
 			if (error.message) {
 				try {
 					let error_obj = JSON.parse(error.message);

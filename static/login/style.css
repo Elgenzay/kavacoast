@@ -8,24 +8,21 @@ label {
 	width: 150px;
 }
 
-input {
-	padding-left: 4px;
-	width: 200px;
-}
-
 .form-wrapper {
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 }
 
 .form-fields-wrapper {
-	align-items: center;
 	display: flex;
 	flex-direction: column;
 }
 
 .form-fields-wrapper>div {
+	align-items: center;
 	display: flex;
+	justify-content: end;
 	margin: 8px;
 }
 
@@ -35,7 +32,39 @@ input {
 	margin: 10px;
 }
 
+.submit-wrapper button {
+	font-size: 16px;
+}
+
 .error-text {
 	color: crimson;
 	height: 40px;
 }
+
+.register-username {
+	display:flex;
+	flex-direction: column;
+	margin: 0px;
+}
+.register-username div {
+	margin: 0px;
+}
+
+.register-username:focus-within .username-info {
+    max-height: 20px;
+    opacity: 1;
+    transition: opacity 1s ease, max-height 0.5s ease;
+}
+
+.username-info {
+    font-size: 14px;
+    margin-bottom: 10px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    text-align: right;
+    transition: opacity 0.3s ease, max-height 0.5s ease;
+    width: 100%;
+}
+
+

@@ -11,10 +11,12 @@ class Background {
 		this.c_random_brightness_max = 0.75;
 
 		this.canvas = canvas;
+
 		if (!this.canvas) {
-			console.error("Canvas not found");
+			console.error("Background canvas not found");
 			return;
 		}
+
 		this.ctx = this.canvas.getContext("2d");
 		window.ebackground = this;
 		window.document.body.setAttribute("onresize", "window.ebackground.reset();");
@@ -27,6 +29,7 @@ class Background {
 	draw_map(map) {
 		this.ctx.fillStyle = "#000";
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
 		for (let i in map) {
 			this.draw_pixel(map[i]);
 		}
@@ -34,9 +37,11 @@ class Background {
 
 	animate() {
 		this.frame++;
+
 		if (this.frame % this.c_appearance_interval_random == 0) {
 			let x = Math.ceil(this.pixels_x * Math.random() - (this.pixels_x / 2));
 			let y = Math.ceil(this.pixels_y * Math.random() - (this.pixels_y / 2));
+
 			this.map_random.push({
 				x,
 				y,
@@ -45,16 +50,20 @@ class Background {
 				"o": 0
 			});
 		}
+
 		let map = [];
+
 		for (let i in this.map_random) {
 			if (this.map_random[i].f) {
 				this.map_random[i].o -= this.c_fill_speed;
+
 				if (this.map_random[i].o <= 0) {
 					delete this.map_random[i];
 					continue;
 				}
 			} else {
 				this.map_random[i].o += this.c_fill_speed;
+
 				if (this.map_random[i].o >= this.map_random[i].t) {
 					this.map_random[i].f = true;
 				}
@@ -76,13 +85,16 @@ class Background {
 	draw_pixel(pixel) {
 		let c = Math.floor(this.c_pixel_brightness * pixel.o);
 		this.ctx.fillStyle = "rgb(" + c * 0.25 + "," + c + "," + c * 0.75 + ")";
+
 		this.ctx.fillRect(
 			((((this.pixels_x / 2) + pixel.x) * this.pixelsize) - (this.c_offset * this.pixelsize)),
 			(((this.pixels_y / 2) + pixel.y) * this.pixelsize),
 			this.pixelsize,
 			this.pixelsize
 		);
+
 		this.ctx.fillStyle = "#000";
+
 		this.ctx.fillRect(
 			((((this.pixels_x / 2) + pixel.x) * this.pixelsize) - (this.c_offset * this.pixelsize)) + 4,
 			(((this.pixels_y / 2) + pixel.y) * this.pixelsize) + 4,

@@ -106,7 +106,7 @@ impl User {
 
 	fn validate_displayname_requirements(displayname: &str) -> Result<String, Error> {
 		Self::validate_name_length(displayname)?;
-		Ok(displayname.to_owned())
+		Ok(displayname.trim().to_owned())
 	}
 
 	fn validate_name_length(name: &str) -> Result<(), Error> {

@@ -1,5 +1,6 @@
 use crate::dbrecord::DBRecord;
 use crate::error::ErrorResponse;
+use crate::generic::BearerToken;
 use crate::models::user::User;
 use crate::routes::token::token;
 use crate::routes::token::TokenRequest;
@@ -30,10 +31,6 @@ pub async fn register(
 	token(token_request).await
 }
 
-/*
-
-use crate::generic::BearerToken;
-
 #[rocket::get("/api/users/me")]
 pub async fn get_self(
 	bearer_token: BearerToken,
@@ -42,5 +39,3 @@ pub async fn get_self(
 	let user = session.user.object().await?;
 	Ok(Json(user))
 }
-
-*/

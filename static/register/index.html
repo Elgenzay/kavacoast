@@ -41,8 +41,16 @@
 				<div class="form-wrapper">
 					<div class="form-fields-wrapper">
 						<div>
-							<label for="username">Username</label>
-							<input type="text" id="username" name="username" oninput="register.input('username')">
+							<div class="register-username">
+								<div>
+									<label for="username">Username</label>
+									<input type="text" id="username" name="username"
+										oninput="register.input('username')">
+								</div>
+								<div class="username-info">
+									Used for logging in; Not displayed publicly
+								</div>
+							</div>
 						</div>
 						<div>
 							<label for="displayname">Display name</label>
