@@ -1,14 +1,14 @@
 use chrono::{Datelike, TimeZone, Utc, Weekday};
 use serde::{Deserialize, Serialize};
+use serenity::all::Interaction;
 use serenity::async_trait;
-use serenity::client::bridge::gateway::ShardManager;
+use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{CommandResult, StandardFramework};
+use serenity::gateway::ShardManager;
 use serenity::model::channel::{Message, Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
-use serenity::model::prelude::command::Command;
-use serenity::model::prelude::interaction::{Interaction, InteractionResponseType};
 use serenity::model::prelude::{RoleId, UserId};
 use serenity::prelude::Mutex;
 use serenity::prelude::*;
@@ -87,24 +87,23 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
 	async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-		if let Interaction::ApplicationCommand(command) = interaction {
+		if let Interaction::Command(command) = interaction {
 			let content = match command.data.name.as_str() {
-				"ping" => cmds::ping::run(&command.data.options),
-				_ => String::new(),
+				"ping" => Some(cmds::ping::run(command.data.options().as_slice())),
+				_ => Some(String::new()),
 			};
-			if let Err(e) = command
-				.create_interaction_response(&ctx.http, |response| {
-					response
-						.kind(InteractionResponseType::ChannelMessageWithSource)
-						.interaction_response_data(|message| message.content(content))
-				})
-				.await
-			{
-				log::error!(
-					"Error responding to command /{}: {}",
-					command.data.name.as_str(),
-					e
-				);
+
+			if let Some(content) = content {
+				let data = CreateInteractionResponseMessage::new().content(content);
+				let builder = CreateInteractionResponse::Message(data);
+
+				if let Err(e) = command.create_response(&ctx.http, builder).await {
+					log::error!(
+						"Error responding to command /{}: {}",
+						command.data.name.as_str(),
+						e
+					);
+				}
 			}
 		}
 	}
@@ -116,7 +115,7 @@ impl EventHandler for Handler {
 			.parse::<u64>()
 			.expect("Invalid admin ID");
 
-		if msg.author.id == UserId(admin_id) {
+		if msg.author.id == UserId::new(admin_id) {
 			match msg.content.as_str() {
 				"k!ll" => {
 					let _ = msg.reply(ctx.http, "Aborting...").await;
@@ -143,10 +142,8 @@ impl EventHandler for Handler {
 	async fn ready(&self, ctx: Context, ready: Ready) {
 		let state = get_state(&ctx).await;
 
-		let cmd_register = Command::set_global_application_commands(&ctx.http, |commands| {
-			commands.create_application_command(|command| cmds::ping::register(command))
-		})
-		.await;
+		let cmd_register =
+			serenity::all::Command::create_global_command(&ctx.http, cmds::ping::register()).await;
 
 		if let Err(e) = cmd_register {
 			panic!("Error registering commands: {}", e);
@@ -173,24 +170,29 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 	let result =
 		async {
 			let groups = get_state(&ctx).await.data.react_role_groups;
-			let msg_id = react.message_id.as_u64();
+			let msg_id = react.message_id.get();
 			let mut match_group_opt = None;
+
 			for group in groups {
-				if &group.message_id == msg_id {
+				if group.message_id == msg_id {
 					match_group_opt = Some(group);
 					break;
 				}
 			}
+
 			let match_group = match match_group_opt {
 				Some(v) => v,
 				None => return Ok(()),
 			};
+
 			let reaction_str = match &react.emoji {
 				ReactionType::Unicode(s) => s,
 				_ => return Ok(()),
 			};
+
 			let mut role_id_opt = None;
 			let mut remove_role_ids = vec![];
+
 			for reactrole in match_group.roles {
 				if reaction_str == &reactrole.emoji {
 					role_id_opt = Some(reactrole.role_id);
@@ -198,36 +200,46 @@ async fn reaction_update(ctx: Context, react: Reaction, adding: bool) {
 					remove_role_ids.push(reactrole.role_id);
 				}
 			}
+
 			let role_id = match role_id_opt {
 				Some(v) => v,
 				None => return Ok(()),
 			};
+
 			let user_id = match &react.user_id {
 				Some(v) => v,
 				None => return Ok(()),
 			};
+
 			let user_id_str = &user_id.to_string();
-			let mut member =
+
+			let member =
 				match Member::convert(&ctx, react.guild_id, Some(react.channel_id), user_id_str)
 					.await
 				{
 					Ok(v) => v,
 					Err(e) => return Err(e.to_string()),
 				};
+
 			if match_group.mutually_exclusive {
 				for remove_role in remove_role_ids {
-					if let Err(e) = member.remove_role(&ctx.http, RoleId(remove_role)).await {
+					if let Err(e) = member
+						.remove_role(&ctx.http, RoleId::new(remove_role))
+						.await
+					{
 						return Err(e.to_string());
 					};
 				}
 			}
+
 			if adding {
-				if let Err(e) = member.add_role(&ctx.http, RoleId(role_id)).await {
+				if let Err(e) = member.add_role(&ctx.http, RoleId::new(role_id)).await {
 					return Err(e.to_string());
 				};
-			} else if let Err(e) = member.remove_role(&ctx.http, RoleId(role_id)).await {
+			} else if let Err(e) = member.remove_role(&ctx.http, RoleId::new(role_id)).await {
 				return Err(e.to_string());
 			}
+
 			Ok(())
 		}
 		.await;
@@ -280,9 +292,7 @@ pub async fn start_bot() {
 		| GatewayIntents::GUILD_MESSAGES
 		| GatewayIntents::GUILD_MESSAGE_REACTIONS
 		| GatewayIntents::MESSAGE_CONTENT;
-	let framework = StandardFramework::new()
-		.configure(|c| c.prefix("k!"))
-		.group(&GENERAL_GROUP);
+	let framework = StandardFramework::new().group(&GENERAL_GROUP);
 	let mut client = Client::builder(token, intents)
 		.event_handler(Handler)
 		.framework(framework)
