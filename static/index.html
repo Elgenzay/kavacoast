@@ -50,13 +50,19 @@
 					<br>
 					You can also share this link for a direct invite:
 				</p>
-				<div id="direct_invite_container">
-					<input readonly type="text" id="direct_invite_link" value="https://kavacoast.com/join">
-					<img onclick="copy()" id="copy_button" src="resources/i/copy.png">
+				<div id="direct-invite-container">
+					<div id="invite">
+						<input readonly type="text" id="direct_invite_link" value="https://kavacoast.com/join"
+							onblur="invite_blur()">
+						<img onclick="copy()" id="copy_button" src="resources/i/copy.png">
+					</div>
+					<div id="copied">
+						Copied!
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="width-restraint" id="discord_widget_container">
+		<div class="width-restraint" id="discord-widget-container">
 			<iframe src=" https://discord.com/widget?id=1133621143270608967&theme=dark" width="350" height="500"
 				allowtransparency="true" frameborder="0"
 				sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>

@@ -51,11 +51,28 @@
 						<div class="submit-wrapper">
 							<button id="submit" type="submit" onclick="login.submit()" disabled>Sign in</button>
 						</div>
+						<div>
+							<a id="forgot-password-button" href="#">Forgot password?</a>
+						</div>
 					</div>
 				</div>
 				<div id="error" class="error-text">
 				</div>
 			</div>
+		</div>
+	</div>
+	<div id="forgot-password-info-wrapper" class="full-screen" style="display:none;" onclick="Login.forgot_password()">
+		<div id="forgot-password-info">
+			<p>
+				Type <code>/resetpassword</code> in the Discord server to reset
+				your password.
+			</p>
+			<p>
+				If you don't have a Discord account linked to your profile, contact an administrator.
+			</p>
+			<button style="width:50px">
+				Ok
+			</button>
 		</div>
 	</div>
 	<canvas id="bgcanvas"></canvas>

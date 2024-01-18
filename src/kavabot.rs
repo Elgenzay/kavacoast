@@ -7,10 +7,10 @@ use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
 use serenity::framework::standard::StandardFramework;
 use serenity::gateway::ShardManager;
-use serenity::model::channel::{Message, Reaction, ReactionType};
+use serenity::model::channel::{Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
-use serenity::model::prelude::{RoleId, UserId};
+use serenity::model::prelude::RoleId;
 use serenity::prelude::Mutex;
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
@@ -104,28 +104,7 @@ impl EventHandler for Handler {
 		}
 	}
 
-	async fn message(&self, ctx: Context, msg: Message) {
-		let admin_id = Environment::new()
-			.admin_id
-			.val()
-			.parse::<u64>()
-			.expect("Invalid admin ID");
-
-		if msg.author.id == UserId::new(admin_id) {
-			match msg.content.as_str() {
-				"k!ll" => {
-					let _ = msg.reply(ctx.http, "Aborting...").await;
-					std::process::abort();
-				}
-				"k!v" => {
-					let _ = msg
-						.reply(ctx.http, format!("v{}", env!("CARGO_PKG_VERSION")))
-						.await;
-				}
-				_ => (),
-			}
-		}
-	}
+	//async fn message(&self, ctx: Context, msg: Message) {}
 
 	async fn reaction_add(&self, ctx: Context, react: Reaction) {
 		reaction_update(ctx, react, true).await;

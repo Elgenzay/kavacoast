@@ -51,8 +51,8 @@ impl Session {
 		let decoding_key = jsonwebtoken::DecodingKey::from_secret(secret.as_ref());
 
 		let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
-		validation.set_audience(&[format!("{}-session", env.domain.val())]);
-		validation.set_issuer(&[env.domain.val()]);
+		validation.set_audience(&[format!("kavacoast.com-session")]);
+		validation.set_issuer(&["kavacoast.com"]);
 
 		let token_data =
 			jsonwebtoken::decode::<JwtClaims>(access_token, &decoding_key, &validation)
@@ -100,8 +100,8 @@ impl Session {
 			sub: self.id.id().to_raw(),
 			exp: now + ACCESS_TOKEN_EXPIRY_SECONDS,
 			iat: now,
-			iss: env.domain.val(),
-			aud: format!("{}-session", env.domain.val()),
+			iss: "kavacoast.com".to_owned(),
+			aud: "kavacoast.com-session".to_owned(),
 		};
 
 		let secret = env.oauth_jwt_secret.val();

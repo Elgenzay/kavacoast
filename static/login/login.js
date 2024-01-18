@@ -13,6 +13,11 @@ class Login {
 		if (queryParams.has("expired")) {
 			this.error_elem.innerText = "Session expired or invalid. Please log in again.";
 		}
+
+		document.getElementById("forgot-password-button").addEventListener("click", function (event) {
+			event.preventDefault();
+			Login.forgot_password();
+		});
 	}
 
 	input(id) {
@@ -59,5 +64,14 @@ class Login {
 				this.error_elem.innerText = generic_err_msg;
 			}
 		});
+	}
+
+	static forgot_password() {
+		let info_wrapper = document.getElementById("forgot-password-info-wrapper");
+		if (info_wrapper.style.display === "none") {
+			info_wrapper.style.display = "flex";
+		} else {
+			info_wrapper.style.display = "none";
+		}
 	}
 }

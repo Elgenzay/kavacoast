@@ -56,7 +56,6 @@ pub struct Environment {
 	pub surreal_address: EnvVarKey,
 	pub surreal_namespace: EnvVarKey,
 	pub surreal_database: EnvVarKey,
-	pub domain: EnvVarKey,
 	pub discord_invite_link: EnvVarKey,
 	pub oauth_jwt_secret: EnvVarKey,
 }
@@ -84,7 +83,6 @@ impl Environment {
 		surreal_address,
 		surreal_namespace,
 		surreal_database,
-		domain,
 		discord_invite_link,
 		oauth_jwt_secret
 	);

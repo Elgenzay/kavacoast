@@ -19,13 +19,35 @@
 	opacity: 1;
 }
 
-#direct_invite_container {
+#copied {
+	opacity: 0;
+	transition: opacity 0.3s;
+}
+
+.copied {
+	opacity: 1 !important;
+	transition: opacity 0.3s;
+}
+
+#direct-invite-container {
 	align-items: center;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 }
 
-#discord_widget_container {
+#invite {
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+}
+
+#invite img {
+	height: 19px;
+	width: 19px;
+}
+
+#discord-widget-container {
 	display: flex;
 	margin: 50px;
 }

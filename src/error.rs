@@ -118,16 +118,6 @@ impl std::fmt::Display for Error {
 	}
 }
 
-impl From<reqwest::Error> for Error {
-	fn from(e: reqwest::Error) -> Self {
-		if let Some(url) = e.url() {
-			Error::generic_500(&format!("{:?} API error: {:?}", url, e))
-		} else {
-			Error::generic_500(&format!("Unknown API error: {:?}", e))
-		}
-	}
-}
-
 impl From<surrealdb::Error> for Error {
 	fn from(e: surrealdb::Error) -> Self {
 		Error::generic_500(&format!("SurrealDB Operation error: {}", e))
