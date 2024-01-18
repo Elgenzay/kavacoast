@@ -27,7 +27,7 @@ pub async fn run(ctx: &Context, discord_user: &User) -> String {
 				match user.db_update_field("password_hash", &hash).await {
 					Ok(_) => {
 						let msg = format!(
-							"Your password has been reset. Here are your new credentials:\n\nUsername: `{}`\nPassword:\n||```\n{}\n```||",
+							"Your password has been reset. Here are your new credentials:\n\nUsername: `{}`\nPassword:\n||```\n{}\n```||\n\nhttps://kavacoast.com/login",
 							user.username, new_password
 						);
 
