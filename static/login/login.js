@@ -39,11 +39,15 @@ class Login {
 	submit() {
 		const generic_err_msg = "Internal server error";
 
+		this.submit_elem.disabled = true;
+
 		Request.post("/api/auth/token", {
 			"grant_type": "password",
 			"username": this.username_elem.value,
 			"password": this.password_elem.value
 		}).then(response => {
+			this.submit_elem.disabled = false;
+
 			try {
 				let jwt = JSON.parse(response);
 				Auth.store_tokens(jwt);
@@ -53,6 +57,8 @@ class Login {
 				this.error_elem.innerText = generic_err_msg;
 			}
 		}).catch(error => {
+			this.submit_elem.disabled = false;
+
 			if (error.message) {
 				try {
 					let error_obj = JSON.parse(error.message);

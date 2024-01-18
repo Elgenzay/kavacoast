@@ -90,12 +90,16 @@ class Register {
 	submit() {
 		const generic_err_msg = "Internal server error";
 
+		this.submit_elem.disabled = true;
+
 		Request.post("/api/register_user", {
 			"username": this.username_elem.value,
 			"display_name": this.displayname_elem.value,
 			"password": this.password_elem.value,
 			"registration_key": this.registration_key,
 		}).then(response => {
+			this.submit_elem.disabled = false;
+
 			try {
 				let response_obj = JSON.parse(response);
 				Auth.store_tokens(response_obj);
@@ -105,6 +109,8 @@ class Register {
 				this.error_elem.innerText = generic_err_msg;
 			}
 		}).catch(error => {
+			this.submit_elem.disabled = false;
+
 			if (error.message) {
 				try {
 					let error_obj = JSON.parse(error.message);
