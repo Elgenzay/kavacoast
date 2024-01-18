@@ -1,10 +1,11 @@
+use crate::cmds;
+use crate::generic::Environment;
 use chrono::{Datelike, TimeZone, Utc, Weekday};
 use serde::{Deserialize, Serialize};
 use serenity::all::Interaction;
 use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{CommandResult, StandardFramework};
+use serenity::framework::standard::StandardFramework;
 use serenity::gateway::ShardManager;
 use serenity::model::channel::{Message, Reaction, ReactionType};
 use serenity::model::gateway::Ready;
@@ -17,9 +18,6 @@ use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::{task, time};
-
-use crate::cmds;
-use crate::generic::Environment;
 
 struct ShardManagerContainer;
 
@@ -78,10 +76,6 @@ struct ReactRole {
 	role_id: u64,
 }
 
-#[group]
-#[commands(ping)]
-struct General;
-
 struct Handler;
 
 #[async_trait]
@@ -90,6 +84,8 @@ impl EventHandler for Handler {
 		if let Interaction::Command(command) = interaction {
 			let content = match command.data.name.as_str() {
 				"ping" => Some(cmds::ping::run(command.data.options().as_slice())),
+				"register" => Some(cmds::register::run(&ctx, &command.user).await),
+				"resetpassword" => Some(cmds::resetpassword::run(&ctx, &command.user).await),
 				_ => Some(String::new()),
 			};
 
@@ -142,12 +138,19 @@ impl EventHandler for Handler {
 	async fn ready(&self, ctx: Context, ready: Ready) {
 		let state = get_state(&ctx).await;
 
-		let cmd_register =
-			serenity::all::Command::create_global_command(&ctx.http, cmds::ping::register()).await;
+		let commands = vec![
+			cmds::register::register,
+			cmds::ping::register,
+			cmds::resetpassword::register,
+		];
 
-		if let Err(e) = cmd_register {
-			panic!("Error registering commands: {}", e);
-		};
+		for register_command in commands {
+			let cmd_register =
+				serenity::all::Command::create_global_command(&ctx.http, register_command()).await;
+			if let Err(e) = cmd_register {
+				panic!("Error registering command: {}", e);
+			}
+		}
 
 		let task = async move {
 			let mut interval =
@@ -292,13 +295,16 @@ pub async fn start_bot() {
 		| GatewayIntents::GUILD_MESSAGES
 		| GatewayIntents::GUILD_MESSAGE_REACTIONS
 		| GatewayIntents::MESSAGE_CONTENT;
-	let framework = StandardFramework::new().group(&GENERAL_GROUP);
+
+	let framework = StandardFramework::new();
+
 	let mut client = Client::builder(token, intents)
 		.event_handler(Handler)
 		.framework(framework)
 		.type_map_insert::<BotData>(BotState::new())
 		.await
 		.expect("Error creating client");
+
 	if let Err(e) = client.start().await {
 		log::error!("Client error: {}", e);
 	}
@@ -312,9 +318,3 @@ fn _get_weekday(offset: &i64) -> Weekday {
 }
 
 async fn tick(_ctx: &Context) {}
-
-#[command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-	msg.reply(ctx, "Pong!").await?;
-	Ok(())
-}

@@ -67,4 +67,31 @@ label {
     width: 100%;
 }
 
+#registration-page {
+	display: none;
+}
 
+#info-page {
+	display: none;
+	font-size: 20px;
+
+}
+
+#info-page > div {
+	height: 800px;
+	width: 800px;
+}
+
+#no-key {
+	display: none;
+}
+
+#bad-key {
+	color: crimson;
+	display: none;
+}
+
+#key-err {
+	color: crimson;
+	display: none;
+}

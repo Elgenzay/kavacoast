@@ -60,6 +60,13 @@ a:hover {
 	transition: color 0.3s ease;
 }
 
+#bgcanvas {
+	left: 0;
+    position: fixed;
+    top: 0;
+    z-index: -100;
+}
+
 #width-restraint {
 	align-items: center;
 	display: flex;

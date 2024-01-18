@@ -1,4 +1,3 @@
-use crate::dbrecord::DBRecord;
 use crate::error::ErrorResponse;
 use crate::generic::BearerToken;
 use crate::models::user::User;
@@ -15,6 +14,7 @@ pub struct RegistrationRequest {
 	pub username: String,
 	pub display_name: String,
 	pub password: String,
+	pub registration_key: String,
 }
 
 #[rocket::post("/api/register_user", format = "json", data = "<registration>")]
@@ -22,8 +22,7 @@ pub async fn register(
 	registration: Json<RegistrationRequest>,
 ) -> Result<Json<TokenResponse>, status::Custom<Json<ErrorResponse>>> {
 	let registration = registration.into_inner();
-	let user = User::new(&registration).await?;
-	user.db_create().await?;
+	let user = User::register(&registration).await?;
 
 	// Log them in
 	let token_request = TokenRequest::new_password_grant(&user.username, &registration.password);

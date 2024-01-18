@@ -1,9 +1,15 @@
+use crate::{
+	dbrecord::{DBRecord, SQLCommand},
+	error::Error,
+	models::session::Session,
+};
 use argon2::Argon2;
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use password_hash::{
 	rand_core::OsRng, PasswordHashString, PasswordHasher, PasswordVerifier, SaltString,
 };
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use rocket::{
 	http::{HeaderMap, Status},
 	request::{FromRequest, Outcome},
@@ -16,12 +22,6 @@ use surrealdb::{
 	opt::auth::Root,
 	sql::{Id, Thing, Uuid},
 	Surreal,
-};
-
-use crate::{
-	dbrecord::{DBRecord, SQLCommand},
-	error::Error,
-	models::session::Session,
 };
 
 pub async fn surrealdb_client() -> Result<Surreal<surrealdb::engine::remote::ws::Client>, String> {
@@ -381,4 +381,12 @@ pub struct JwtClaims {
 	pub iss: String,
 	/// Audience
 	pub aud: String,
+}
+
+pub fn random_alphanumeric_string(length: usize) -> String {
+	thread_rng()
+		.sample_iter(&Alphanumeric)
+		.take(length)
+		.map(char::from)
+		.collect()
 }

@@ -26,7 +26,7 @@
 </head>
 
 <body>
-	<div class="full-screen">
+	<div id="registration-page" class="full-screen">
 		<div id="width-restraint">
 			<div class="links">
 				<span>
@@ -74,6 +74,31 @@
 				<div id="error" class="error-text">
 				</div>
 			</div>
+		</div>
+	</div>
+	<div id="info-page" class="full-screen">
+		<div>
+			<h2 id="no-key">Join us via Discord!</h2>
+			<h2 id="bad-key">This registration key is used, invalid, or expired.</h2>
+			<h2 id="key-err">Internal server error</h2>
+			<p>
+				To register, please <a href="https://kavacoast.com/join">join our Discord community</a>.
+				<br>
+				Once you're in, type <code style="font-size:16px">/register</code> in any channel to receive your
+				personal invite link.
+			</p>
+			<p>
+				We use Discord to prevent bot registrations and to simplify the account recovery process.
+				This means you won't need to provide an email address for registration.
+			</p>
+			<p>
+				If you're not a Discord user, you can ask an existing member to generate a referral link
+				for you. However, without a linked Discord account, you'll need to contact an administrator to
+				recover your password if you lose it.
+			</p>
+			<p>
+				<a href="/">Back</a>
+			</p>
 		</div>
 	</div>
 	<canvas id="bgcanvas"></canvas>

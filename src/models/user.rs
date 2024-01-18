@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::generic::Expirable;
 use crate::generic::HashedString;
 use crate::generic::UUID;
+use crate::models::registration::Registration;
 use crate::models::session::Session;
 use crate::routes::users::RegistrationRequest;
 use chrono::DateTime;
@@ -21,6 +22,7 @@ pub struct User {
 	pub username: String,
 	pub display_name: String,
 	pub password_hash: HashedString,
+	pub discord_id: Option<u64>,
 	pub created_at: DateTime<Utc>,
 	pub updated_at: DateTime<Utc>,
 }
@@ -36,11 +38,13 @@ impl DBRecord for User {
 }
 
 impl User {
-	/// Create a new user without updating the database.
+	/// Create a new User and persist it to the database.
+	///
+	/// The associated Registration will be deleted.
 	///
 	/// Default values are specified here.
-	pub async fn new(registration: &RegistrationRequest) -> Result<Self, Error> {
-		let username = Self::validate_username_requirements(&registration.username)?;
+	pub async fn register(registration_request: &RegistrationRequest) -> Result<Self, Error> {
+		let username = Self::validate_username_requirements(&registration_request.username)?;
 
 		if User::db_search_one("username", &username).await?.is_some() {
 			return Err(Error::new(
@@ -50,14 +54,41 @@ impl User {
 			));
 		};
 
+		let registration =
+			Registration::db_search_one("registration_key", &registration_request.registration_key)
+				.await?
+				.ok_or_else(|| {
+					Error::new(Status::Unauthorized, "Invalid registration key", None)
+				})?;
+
+		registration.db_delete().await?;
+
+		if let Some(discord_id) = registration.discord_id {
+			if User::db_search_one("discord_id", &discord_id)
+				.await?
+				.is_some()
+			{
+				return Err(Error::new(
+					Status::BadRequest,
+					"A user with this Discord ID already exists.", // This shouldn't actually happen, but just in case.
+					None,
+				));
+			};
+		}
+
 		let user = Self {
 			id: UUID::new(User::table()),
 			username,
-			display_name: Self::validate_displayname_requirements(&registration.display_name)?,
-			password_hash: HashedString::new(&registration.password)?,
+			display_name: Self::validate_displayname_requirements(
+				&registration_request.display_name,
+			)?,
+			password_hash: HashedString::new(&registration_request.password)?,
+			discord_id: registration.discord_id,
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
 		};
+
+		user.db_create().await?;
 
 		Ok(user)
 	}
