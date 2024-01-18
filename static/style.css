@@ -63,12 +63,12 @@
 
 .join-button a img {
 	border-radius: 60px;
-	transition: border-radius 500ms;
+	transition: border-radius 0.6s ease;
 }
 
 .join-button a:hover img {
 	border-radius: 35px;
-	transition: border-radius 500ms;
+	transition: border-radius 0.3s ease;
 }
 
 .join-button {

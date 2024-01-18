@@ -39,21 +39,19 @@
 			<div id="title" data-fadein="Log in"></div>
 			<div class="main-content">
 				<div class="form-wrapper">
-					<div class="form-fields-wrapper">
-						<div>
-							<label for="username">Username</label>
-							<input type="text" id="username" name="username" oninput="login.input('username')">
-						</div>
-						<div>
-							<label for="password">Password</label>
-							<input type="password" id="password" name="password" oninput="login.input('password')">
-						</div>
-						<div class="submit-wrapper">
-							<button id="submit" type="submit" onclick="login.submit()" disabled>Sign in</button>
-						</div>
-						<div>
-							<a id="forgot-password-button" href="#">Forgot password?</a>
-						</div>
+					<div>
+						<label for="username">Username</label>
+						<input type="text" id="username" name="username" oninput="login.input('username')">
+					</div>
+					<div>
+						<label for="password">Password</label>
+						<input type="password" id="password" name="password" oninput="login.input('password')">
+					</div>
+					<div class="submit-wrapper">
+						<button id="submit" type="submit" onclick="login.submit()" disabled>Sign in</button>
+					</div>
+					<div>
+						<a id="forgot-password-button" href="#">Forgot password?</a>
 					</div>
 				</div>
 				<div id="error" class="error-text">

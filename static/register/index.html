@@ -39,40 +39,36 @@
 			<div id="title" data-fadein="Register"></div>
 			<div class="main-content">
 				<div class="form-wrapper">
-					<div class="form-fields-wrapper">
-						<div>
-							<div class="register-username">
-								<div>
-									<label for="username">Username</label>
-									<input type="text" id="username" name="username"
-										oninput="register.input('username')">
-								</div>
-								<div class="username-info">
-									Used for logging in; Not displayed publicly
-								</div>
+					<div>
+						<div class="register-username">
+							<div>
+								<label for="username">Username</label>
+								<input type="text" id="username" name="username" oninput="register.input('username')">
+							</div>
+							<div class="username-info">
+								Used for logging in; Not displayed publicly
 							</div>
 						</div>
-						<div>
-							<label for="displayname">Display name</label>
-							<input type="text" id="displayname" name="displayname"
-								oninput="register.input('displayname')">
-						</div>
-						<div>
-							<label for="password">Password</label>
-							<input type="password" id="password" name="password" oninput="register.input('password')">
-						</div>
-						<div>
-							<label for="confirmpassword">Confirm Password</label>
-							<input type="password" id="confirmpassword" name="confirmpassword"
-								oninput="register.input('username')" onblur="register.input('username')">
-						</div>
-						<div class="submit-wrapper">
-							<button id="submit" type="submit" disabled onclick="register.submit()">Register</button>
-						</div>
+					</div>
+					<div>
+						<label for="displayname">Display name</label>
+						<input type="text" id="displayname" name="displayname" oninput="register.input('displayname')">
+					</div>
+					<div>
+						<label for="password">Password</label>
+						<input type="password" id="password" name="password" oninput="register.input('password')">
+					</div>
+					<div>
+						<label for="confirmpassword">Confirm Password</label>
+						<input type="password" id="confirmpassword" name="confirmpassword"
+							oninput="register.input('username')" onblur="register.input('username')">
+					</div>
+					<div class="submit-wrapper">
+						<button id="submit" type="submit" disabled onclick="register.submit()">Register</button>
 					</div>
 				</div>
-				<div id="error" class="error-text">
-				</div>
+			</div>
+			<div id="error" class="error-text">
 			</div>
 		</div>
 	</div>
@@ -94,7 +90,7 @@
 			<p>
 				If you're not a Discord user, you can ask an existing member to generate a referral link
 				for you. However, without a linked Discord account, you'll need to contact an administrator to
-				recover your password if you lose it.
+				reset your password if you lose it.
 			</p>
 			<p>
 				<a href="/">Back</a>

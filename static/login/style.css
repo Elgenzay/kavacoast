@@ -3,15 +3,33 @@ p {
 }
 
 label {
-	padding-right:16px;
+	display: inline-block;
+	padding-right: 16px;
 	text-align: right;
 	width: 150px;
+}
+
+@media screen and (max-width: 800px) {
+	label {
+		padding-right: 0px;
+		text-align: center;
+	}
+
+	.form-wrapper div {
+		align-items: center;
+		display: flex;
+		flex-direction: column;
+	}
 }
 
 .form-wrapper {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+}
+
+.form-wrapper > div {
+	margin: 8px;
 }
 
 .form-fields-wrapper {
@@ -29,6 +47,7 @@ label {
 .submit-wrapper {
 	align-items: center;
 	display: flex;
+	justify-content: end;
 	margin: 10px;
 }
 
@@ -78,8 +97,12 @@ label {
 }
 
 #info-page > div {
-	height: 800px;
-	width: 800px;
+	max-height: 800px;
+	max-width: 800px;
+}
+
+#info-page h2 {
+	margin-left: 40px;
 }
 
 #no-key {

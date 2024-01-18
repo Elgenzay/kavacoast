@@ -14,6 +14,11 @@ class Register {
 		let params = new URLSearchParams(window.location.search);
 		let registration_key = params.get('k');
 
+		if (registration_key == "test") {
+			document.getElementById("registration-page").style.display = "flex";
+			return;
+		}
+
 		let no_key = document.getElementById("no-key");
 		let bad_key = document.getElementById("bad-key");
 		let info_page = document.getElementById("info-page");

@@ -88,6 +88,7 @@ a:hover {
 	display: grid;
 	height: 0;
 	letter-spacing: 2px;
+	margin-right: 50px;
 	overflow: visible;
 	text-align: right;
 	width: 100%;
