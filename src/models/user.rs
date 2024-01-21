@@ -23,8 +23,15 @@ pub struct User {
 	pub display_name: String,
 	pub password_hash: HashedString,
 	pub discord_id: Option<u64>,
-	pub created_at: DateTime<Utc>,
-	pub updated_at: DateTime<Utc>,
+	created_at: DateTime<Utc>,
+	updated_at: DateTime<Utc>,
+	roles: Vec<Role>,
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum Role {
+	Admin,
 }
 
 impl DBRecord for User {
@@ -86,11 +93,16 @@ impl User {
 			discord_id: registration.discord_id,
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
+			roles: vec![],
 		};
 
 		user.db_create().await?;
 
 		Ok(user)
+	}
+
+	pub fn has_role(&self, role: &Role) -> bool {
+		self.roles.contains(role)
 	}
 
 	pub fn verify_password(&self, password: &str) -> Result<(), Error> {

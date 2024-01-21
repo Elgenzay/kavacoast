@@ -3,7 +3,6 @@ use crate::error::Error;
 use crate::generic::{Environment, Expirable, HashedString, JwtClaims, UUID};
 use crate::models::user::User;
 use chrono::{DateTime, Utc};
-use rocket::http::Status;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::{Id, Uuid};
 
@@ -51,7 +50,7 @@ impl Session {
 		let decoding_key = jsonwebtoken::DecodingKey::from_secret(secret.as_ref());
 
 		let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
-		validation.set_audience(&[format!("kavacoast.com-session")]);
+		validation.set_audience(&["kavacoast.com-session"]);
 		validation.set_issuer(&["kavacoast.com"]);
 
 		let token_data =
@@ -61,7 +60,7 @@ impl Session {
 
 		let session: Session = Self::db_by_id(Id::from(token_data.claims.sub))
 			.await?
-			.ok_or(Error::new(Status::Gone, "Account gone", None))?;
+			.ok_or(Error::generic_401())?;
 
 		Ok(session)
 	}

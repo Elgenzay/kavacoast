@@ -51,6 +51,9 @@ pub async fn start_web() {
 				routes::users::register,
 				routes::users::get_self,
 				routes::check_registration_key::check_registration_key,
+				routes::pages::dashboard::dashboard,
+				routes::pages::admin::admin,
+				routes::pages::settings::settings,
 			],
 		)
 		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))

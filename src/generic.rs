@@ -89,7 +89,7 @@ impl Environment {
 
 	pub fn load_path(path: &str) {
 		let env: Self =
-			confy::load_path(path).unwrap_or_else(|err| panic!("Failed to load config:: {}", err));
+			confy::load_path(path).unwrap_or_else(|err| panic!("Failed to load {}: {}", path, err));
 
 		let map = env.as_hashmap();
 

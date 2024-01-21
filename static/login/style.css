@@ -125,7 +125,7 @@ label {
 
 #forgot-password-info {
 	background-color: #000;
-	border: 2px solid #1F8974;
+	border: 2px solid var(--green);
 	border-radius: 10px;
 	padding: 20px;
 	text-align: center;

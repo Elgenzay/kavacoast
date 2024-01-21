@@ -87,22 +87,34 @@ class Auth {
 			.toLowerCase()
 	}
 
+	/**
+	 * Send an authenticated request.
+	 * If the access token has expired, it will be refreshed and the request will be retried.
+	 */
 	static request(url, body, method = "GET", headers = {}) {
 		return new Promise((resolve, reject) => {
 			headers["Authorization"] = `Bearer ${Auth.get_cookie("accessToken")}`;
 			Request.send(url, body, method, headers).then(response => {
 				resolve(response);
 			}).catch(e => {
-				if (e.message === "Invalid Credentials") {
+				try {
+					if (!e.message || !JSON.parse(e.message).error) {
+						reject(e);
+						return;
+					}
+				} catch (error) {
+					reject(e);
+					return;
+				}
+
+				if (JSON.parse(e.message).error == "Invalid credentials") {
 					Auth.refresh_token().then(() => {
 						headers["Authorization"] = `Bearer ${Auth.get_cookie("accessToken")}`;
-						Request.send(url, body, method, headers).then(response => {
-							resolve(response);
-						}).catch(error => {
-							reject(error);
-						});
-					}).catch(error => {
-						reject(error);
+						return Request.send(url, body, method, headers);
+					}).then(response => {
+						resolve(response);
+					}).catch(e => {
+						reject(e);
 					});
 				} else {
 					reject(e);
@@ -110,5 +122,6 @@ class Auth {
 			});
 		});
 	}
+
 
 }

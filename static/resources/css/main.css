@@ -1,3 +1,8 @@
+:root {
+    --green: #1F8974;
+    --dark-green: #041010;
+}
+
 html,
 body {
 	height: 100%;
@@ -13,17 +18,18 @@ button {
     color: #222;
     font-family: Roboto;
     padding: 6px;
-	transition: border 0.5s ease, color 0.3s ease;
+	transition: border 0.5s ease, color 0.3s ease, background-color 0.3s ease;
 }
 
 button:enabled {
-	border: 1px solid #1F8974;
-    color: #1F8974;
+	border: 1px solid var(--green);
+    color: var(--green);
     cursor: pointer;
-	transition: border 0.5s ease, color 0.3s ease;
+	transition: border 0.5s ease, color 0.3s ease, background-color 0.3s ease;
 }
 
 button:enabled:hover {
+	background-color: var(--dark-green);
     color: #fff;
 }
 
@@ -50,7 +56,7 @@ body {
 }
 
 a {
-	color: #1F8974;
+	color: var(--green);
 	text-decoration: none;
 	transition: color 0.3s ease;
 }
