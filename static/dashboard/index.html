@@ -50,8 +50,76 @@
 				<div class="loader"></div>
 			</div>
 			<div class="page hidden" data-page="settings">
-				Logged in as <div class="displayname"></div>
-				<button onclick="Auth.logout()">Logout</button>
+				<h1>Settings</h1>
+				<div class="section">
+					<div>
+						Logged in as <span class="displayname"></span>
+					</div>
+					<button onclick="Auth.logout()">Logout</button>
+				</div>
+				<div class="section">
+					<div>
+						<div class="label align-responsive">
+							Username
+						</div>
+						<input id="settings-change-username-input" type="text"
+							oninput="dashboard.settings_username_input(this)"></input>
+						<button id="settings-change-username-button" onclick="dashboard.settings_username_update()"
+							disabled>Update</button>
+					</div>
+					<div id="settings-change-username-error" class="error-message"></div>
+				</div>
+				<div class="section">
+					<div>
+						<div class="label align-responsive">
+							Display name
+						</div>
+						<input id="settings-change-displayname-input" type="text"
+							oninput="dashboard.settings_displayname_input(this)"></input>
+						<button id="settings-change-displayname-button"
+							onclick="dashboard.settings_displayname_update()" disabled>Update</button>
+					</div>
+					<div id="settings-change-displayname-error" class="error-message"></div>
+				</div>
+				<div class="section">
+					<div>
+						<div>
+							<div class="label">
+								Current password
+							</div>
+							<input id="settings-currentpassword" type="password"
+								oninput="dashboard.settings_current_password_input(this)"></input>
+						</div>
+						<div>
+							<div>
+								<div class="label">
+									New password
+								</div>
+								<input id="settings-newpassword" type="password"
+									oninput="dashboard.settings_new_password_input(this)"></input>
+							</div>
+							<div>
+								<div class="label">
+									Confirm new password
+								</div>
+								<input id="settings-confirm-newpassword" type="password"
+									oninput="dashboard.settings_confirm_password_input(this)"></input>
+							</div>
+						</div>
+						<button disabled id="settings-change-password-button"
+							onclick="dashboard.settings_password_update()">Update</button>
+					</div>
+					<div id="settings-change-password-error" class="error-message"></div>
+				</div>
+				<div class="section">
+					<div>
+						<div>
+							Discord username:
+						</div>
+						<div class="discord-username">
+						</div>
+					</div>
+				</div>
 			</div>
 			<div class="page hidden" data-page="admin">
 				admin

@@ -1,5 +1,5 @@
-use crate::error::ErrorResponse;
 use crate::generic::BearerToken;
+use crate::{error::ErrorResponse, generic::get_discord_username};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 
@@ -7,6 +7,7 @@ use serde::Serialize;
 pub struct SettingsPageResponse {
 	username: String,
 	display_name: String,
+	discord_username: Option<String>,
 }
 
 #[rocket::get("/api/page/settings")]
@@ -19,5 +20,11 @@ pub async fn settings(
 	Ok(Json(SettingsPageResponse {
 		username: user.username.to_owned(),
 		display_name: user.display_name.to_owned(),
+
+		discord_username: if let Some(discord_id) = user.discord_id {
+			get_discord_username(discord_id).await.ok()
+		} else {
+			None
+		},
 	}))
 }

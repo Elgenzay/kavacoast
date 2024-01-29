@@ -34,10 +34,10 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	justify-content: center;
 	max-width: 800px;
 	padding: 20px;
 	width: 600px;
+	overflow-y: scroll;
 }
 
 #side-panel {
@@ -103,6 +103,7 @@
 	align-items: center;
 	display: flex;
 	justify-content: center;
+	height: 100%;
 }
 
 #page-error {
@@ -110,4 +111,76 @@
 	display: flex;
 	justify-content: center;
 	flex-direction: column;
+}
+
+.section {
+	border: 2px solid var(--green);
+	border-radius: 8px;
+	padding: 10px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 20px !important;
+}
+
+.section>div {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+
+}
+
+.align-responsive {
+	text-align: right;
+}
+
+@media (max-width: 800px) {
+	.section>div {
+		flex-direction: column;
+	}
+
+	.align-responsive {
+		text-align: left;
+	}
+}
+
+.displayname {
+	color: var(--green);
+	font-weight: bold;
+}
+
+.discord-username {
+	color: var(--green);
+	font-weight: bold;
+}
+
+.page {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.page * {
+	margin: 4px;
+}
+
+input {
+	width: 200px;
+}
+
+button {
+	width: 100px;
+}
+
+.label {
+	min-width: 200px;
+}
+
+.error-message {
+	color: crimson;
 }

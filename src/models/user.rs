@@ -14,6 +14,7 @@ use serde::Serialize;
 
 const NAME_MIN_LENGTH: usize = 2;
 const NAME_MAX_LENGTH: usize = 32;
+const PASSWORD_MIN_LENGTH: usize = 8;
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -83,6 +84,8 @@ impl User {
 			};
 		}
 
+		Self::verify_password_requirements(&registration_request.password)?;
+
 		let user = Self {
 			id: UUID::new(User::table()),
 			username,
@@ -133,7 +136,7 @@ impl User {
 		Ok(None)
 	}
 
-	fn validate_username_requirements(username: &str) -> Result<String, Error> {
+	pub fn validate_username_requirements(username: &str) -> Result<String, Error> {
 		Self::validate_name_length(username)?;
 
 		if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
@@ -147,7 +150,7 @@ impl User {
 		Ok(username.to_lowercase())
 	}
 
-	fn validate_displayname_requirements(displayname: &str) -> Result<String, Error> {
+	pub fn validate_displayname_requirements(displayname: &str) -> Result<String, Error> {
 		Self::validate_name_length(displayname)?;
 		Ok(displayname.trim().to_owned())
 	}
@@ -168,6 +171,32 @@ impl User {
 				None,
 			));
 		}
+
+		Ok(())
+	}
+
+	fn verify_password_requirements(password: &str) -> Result<(), Error> {
+		if password.len() < PASSWORD_MIN_LENGTH {
+			return Err(Error::new(
+				Status::BadRequest,
+				&format!(
+					"Password must be at least {} characters long.",
+					PASSWORD_MIN_LENGTH
+				),
+				None,
+			));
+		}
+
+		Ok(())
+	}
+
+	/// Verify password requirements, update the password, and persist it to the database.
+	pub async fn set_password(&mut self, password: &str) -> Result<(), Error> {
+		Self::verify_password_requirements(password)?;
+		self.password_hash = HashedString::new(password)?;
+
+		self.db_update_field("password_hash", &self.password_hash)
+			.await?;
 
 		Ok(())
 	}

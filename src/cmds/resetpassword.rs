@@ -1,4 +1,4 @@
-use crate::{dbrecord::DBRecord, generic::HashedString};
+use crate::dbrecord::DBRecord;
 use serenity::{
 	all::User,
 	builder::{CreateCommand, CreateMessage},
@@ -12,19 +12,11 @@ pub async fn run(ctx: &Context, discord_user: &User) -> String {
 
 	match crate::models::user::User::db_search_one("discord_id", &user_id).await {
 		Ok(user) => {
-			if let Some(user) = user {
+			if let Some(mut user) = user {
 				let new_password =
 					crate::generic::random_alphanumeric_string(RANDOM_PASSWORD_LENGTH);
 
-				let hash = match HashedString::new(&new_password) {
-					Ok(hash) => hash,
-					Err(e) => {
-						log::error!("Password reset error hashing password: {}", e);
-						return "Internal server error".to_owned();
-					}
-				};
-
-				match user.db_update_field("password_hash", &hash).await {
+				match user.set_password(&new_password).await {
 					Ok(_) => {
 						let msg = format!(
 							"Your password has been reset. Here are your new credentials:\n\nUsername: `{}`\nPassword:\n||```\n{}\n```||\n\nhttps://kavacoast.com/login",

@@ -388,3 +388,45 @@ pub fn random_alphanumeric_string(length: usize) -> String {
 		.map(char::from)
 		.collect()
 }
+
+pub async fn get_discord_username(discord_user_id: u64) -> Result<String, Error> {
+	let client = reqwest::Client::new();
+
+	let res = client
+		.get(format!(
+			"https://discord.com/api/v10/users/{}",
+			discord_user_id
+		))
+		.header(
+			"Authorization",
+			format!("Bot {}", Environment::new().bot_token.val()),
+		)
+		.send()
+		.await;
+
+	match res {
+		Ok(res) => {
+			#[derive(serde::Deserialize)]
+			struct DiscordUser {
+				username: String,
+				discriminator: String,
+			}
+
+			let user: DiscordUser = res.json().await.map_err(|e| {
+				Error::generic_500(&format!("Error parsing Discord username: {}", e))
+			})?;
+
+			let username = if user.discriminator == "0" {
+				user.username
+			} else {
+				format!("{}#{}", user.username, user.discriminator)
+			};
+
+			Ok(username)
+		}
+		Err(e) => Err(Error::generic_500(&format!(
+			"Error getting Discord username: {}",
+			e
+		))),
+	}
+}

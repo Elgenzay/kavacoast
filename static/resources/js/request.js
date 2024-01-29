@@ -4,9 +4,6 @@ class Request {
 	}
 
 	static post(url, body, headers = {}) {
-		if (!headers["Content-Type"]) {
-			headers["Content-Type"] = "application/json";
-		}
 		return Request.send(url, body, "POST", headers);
 	}
 
@@ -14,6 +11,10 @@ class Request {
 		return new Promise(function (resolve, reject) {
 			var xhr = new XMLHttpRequest();
 			xhr.open(method, url);
+
+			if (body) {
+				xhr.setRequestHeader("Content-Type", "application/json");
+			}
 
 			for (const [key, value] of Object.entries(headers)) {
 				xhr.setRequestHeader(key, value);
