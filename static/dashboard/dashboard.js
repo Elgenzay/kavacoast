@@ -25,8 +25,8 @@ class Dashboard {
 	};
 
 	constructor() {
-		this.pages = document.getElementsByClassName("page");
 		this.open_loading();
+		this.settings = new Settings();
 
 		Auth.request("/api/page/dashboard").then(r => {
 			let response = JSON.parse(r);
@@ -66,8 +66,8 @@ class Dashboard {
 		});
 	}
 
-	show_page(page) {
-		for (let page_elem of this.pages) {
+	static show_page(page) {
+		for (let page_elem of document.getElementsByClassName("page")) {
 			if (page_elem.getAttribute("data-page") === page) {
 				page_elem.classList.remove("hidden");
 			} else {
@@ -85,37 +85,15 @@ class Dashboard {
 	}
 
 	open_loading() {
-		this.show_page("loading");
+		Dashboard.show_page("loading");
 	}
 
 	open_error() {
-		this.show_page("error");
-	}
-
-	open_settings(data) {
-		this.current_username = data.username;
-		this.current_displayname = data.display_name;
-
-		this.update_username_button = document.getElementById("settings-change-username-button");
-		this.update_displayname_button = document.getElementById("settings-change-displayname-button");
-		this.update_password_button = document.getElementById("settings-change-password-button");
-
-		this.update_username_error = document.getElementById("settings-change-username-error");
-		this.update_displayname_error = document.getElementById("settings-change-displayname-error");
-		this.update_password_error = document.getElementById("settings-change-password-error");
-
-		document.getElementById("settings-change-displayname-input").value = data.display_name;
-		document.getElementById("settings-change-username-input").value = data.username;
-
-		for (let elem of document.getElementsByClassName("discord-username")) {
-			elem.innerText = data.discord_username;
-		}
-
-		this.show_page("settings");
+		Dashboard.show_page("error");
 	}
 
 	open_admin() {
-		this.show_page("admin");
+		Dashboard.show_page("admin");
 	}
 
 	open_page(page) {
@@ -177,118 +155,7 @@ class Dashboard {
 		}
 	}
 
-	settings_username_input(elem) {
-		this.settings_new_username = elem.value;
-
-		elem.value = Auth.format_username(elem.value);
-
-		if (this.settings_new_username !== this.current_username || this.settings_new_username === "") {
-			this.update_username_button.disabled = false;
-		} else {
-			this.update_username_button.disabled = true;
-		}
-	}
-
-	settings_displayname_input(elem) {
-		this.settings_new_displayname = elem.value;
-
-		if (this.settings_new_displayname !== this.current_displayname || this.settings_new_displayname === "") {
-			this.update_displayname_button.disabled = false;
-		} else {
-			this.update_displayname_button.disabled = true;
-		}
-	}
-
-	settings_current_password_input(elem) {
-		this.settings_current_password = elem.value;
-		this.settings_toggle_password_update_button();
-	}
-
-	settings_new_password_input(elem) {
-		this.settings_new_password = elem.value;
-		this.settings_toggle_password_update_button();
-	}
-
-	settings_confirm_password_input(elem) {
-		this.settings_confirm_new_password = elem.value;
-		this.settings_toggle_password_update_button();
-	}
-
-	settings_toggle_password_update_button() {
-		if (!this.settings_current_password || !this.settings_new_password || this.settings_new_password !== this.settings_confirm_new_password) {
-			this.update_password_button.disabled = true;
-		} else {
-			this.update_password_button.disabled = false;
-		}
-	}
-
-	settings_password_update() {
-		this.update_password_button.disabled = true;
-
-		Auth.request("/api/users/me/change_password", {
-			"old_password": this.settings_current_password,
-			"new_password": this.settings_new_password
-		}, "POST").then(r => {
-			try {
-				let response = JSON.parse(r);
-				if (response.success) {
-					window.location.reload();
-				}
-			} catch (e) {
-				this.display_error(e, this.update_password_error);
-				this.update_password_button.disabled = false;
-			}
-		}).catch(e => {
-			this.display_error(e, this.update_password_error);
-			this.update_password_button.disabled = false;
-		});
-	}
-
-	settings_username_update() {
-		this.update_username_button.disabled = true;
-
-		Auth.request("/api/users/me", {
-			"username": this.settings_new_username
-		}, "PATCH").then(r => {
-			try {
-				let response = JSON.parse(r);
-				if (response.success) {
-					window.location.reload();
-				}
-			} catch (e) {
-				this.display_error(e, this.update_username_error);
-				this.update_username_button.disabled = false;
-			}
-		}).catch(e => {
-			this.display_error(e, this.update_username_error);
-			this.update_username_button.disabled = false;
-		});
-	}
-
-	settings_displayname_update() {
-		this.update_displayname_button.disabled = true;
-
-		Auth.request("/api/users/me", {
-			"display_name": this.settings_new_displayname
-		}, "PATCH").then(r => {
-			try {
-				let response = JSON.parse(r);
-				if (response.success) {
-					window.location.reload();
-				}
-			} catch (e) {
-				this.display_error(e, this.update_displayname_error);
-				this.update_displayname_button.disabled = false;
-			}
-		}).catch(e => {
-			this.display_error(e, this.update_displayname_error);
-			this.update_displayname_button.disabled = false;
-		});
-	}
-
-
-
-	display_error(error, elem) {
+	static display_error(error, elem) {
 		console.error(error);
 		try {
 			let err_msg = JSON.parse(error.message).error;
@@ -296,5 +163,9 @@ class Dashboard {
 		} catch {
 			elem.innerText = "Internal server error";
 		}
+	}
+
+	open_settings(data) {
+		this.settings.open_settings(data);
 	}
 }

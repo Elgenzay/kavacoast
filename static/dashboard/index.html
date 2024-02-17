@@ -13,6 +13,7 @@
 	<script src="/resources/js/request.js"></script>
 	<script src="/resources/js/auth.js"></script>
 	<script src="/dashboard/dashboard.js"></script>
+	<script src="/dashboard/settings.js"></script>
 	<script>
 		var dashboard;
 
@@ -63,8 +64,8 @@
 							Username
 						</div>
 						<input id="settings-change-username-input" type="text"
-							oninput="dashboard.settings_username_input(this)"></input>
-						<button id="settings-change-username-button" onclick="dashboard.settings_username_update()"
+							oninput="dashboard.settings.username_input(this)"></input>
+						<button id="settings-change-username-button" onclick="dashboard.settings.username_update()"
 							disabled>Update</button>
 					</div>
 					<div id="settings-change-username-error" class="error-message"></div>
@@ -75,9 +76,9 @@
 							Display name
 						</div>
 						<input id="settings-change-displayname-input" type="text"
-							oninput="dashboard.settings_displayname_input(this)"></input>
+							oninput="dashboard.settings.displayname_input(this)"></input>
 						<button id="settings-change-displayname-button"
-							onclick="dashboard.settings_displayname_update()" disabled>Update</button>
+							onclick="dashboard.settings.displayname_update()" disabled>Update</button>
 					</div>
 					<div id="settings-change-displayname-error" class="error-message"></div>
 				</div>
@@ -88,7 +89,7 @@
 								Current password
 							</div>
 							<input id="settings-currentpassword" type="password"
-								oninput="dashboard.settings_current_password_input(this)"></input>
+								oninput="dashboard.settings.current_password_input(this)"></input>
 						</div>
 						<div>
 							<div>
@@ -96,18 +97,18 @@
 									New password
 								</div>
 								<input id="settings-newpassword" type="password"
-									oninput="dashboard.settings_new_password_input(this)"></input>
+									oninput="dashboard.settings.new_password_input(this)"></input>
 							</div>
 							<div>
 								<div class="label">
 									Confirm new password
 								</div>
 								<input id="settings-confirm-newpassword" type="password"
-									oninput="dashboard.settings_confirm_password_input(this)"></input>
+									oninput="dashboard.settings.confirm_password_input(this)"></input>
 							</div>
 						</div>
 						<button disabled id="settings-change-password-button"
-							onclick="dashboard.settings_password_update()">Update</button>
+							onclick="dashboard.settings.password_update()">Update</button>
 					</div>
 					<div id="settings-change-password-error" class="error-message"></div>
 				</div>
