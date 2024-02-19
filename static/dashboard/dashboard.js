@@ -15,18 +15,34 @@ class Dashboard {
 		"admin": {
 			"label": "Administration",
 			"endpoint": "/api/page/admin",
-			"function": "open_admin"
+			"function": "open_admin",
+			"role": "admin",
 		},
 		"settings": {
 			"label": "Settings",
 			"endpoint": "/api/page/settings",
-			"function": "open_settings"
+			"function": "open_settings",
+		},
+		"pool": {
+			"label": "Pool",
+			"endpoint": "/api/page/pool",
+			"function": "open_pool",
+			"condition": "is_pool_player"
+		},
+		"pool_host": {
+			"label": "Pool Host",
+			"endpoint": "/api/page/pool_host",
+			"function": "open_pool_host",
+			"role": "pool_host",
 		}
 	};
 
 	constructor() {
 		this.open_loading();
 		this.settings = new Settings();
+		this.pool_host = new PoolHost();
+		this.admin = new Admin();
+		this.pool = new Pool();
 
 		Auth.request("/api/page/dashboard").then(r => {
 			let response = JSON.parse(r);
@@ -42,7 +58,11 @@ class Dashboard {
 					continue;
 				}
 
-				if (k == "admin" && !response.is_admin) {
+				if (page_obj.role && !response.roles.includes(page_obj.role)) {
+					continue;
+				}
+
+				if (page_obj.condition && !response[page_obj.condition]) {
 					continue;
 				}
 
@@ -82,18 +102,6 @@ class Dashboard {
 			newurl.searchParams.set('p', page);
 			window.history.pushState({ path: newurl.href }, '', newurl.href);
 		}
-	}
-
-	open_loading() {
-		Dashboard.show_page("loading");
-	}
-
-	open_error() {
-		Dashboard.show_page("error");
-	}
-
-	open_admin() {
-		Dashboard.show_page("admin");
 	}
 
 	open_page(page) {
@@ -165,7 +173,28 @@ class Dashboard {
 		}
 	}
 
+
+	open_loading() {
+		Dashboard.show_page("loading");
+	}
+
+	open_error() {
+		Dashboard.show_page("error");
+	}
+
+	open_admin(data) {
+		this.admin.open(data);
+	}
+
 	open_settings(data) {
-		this.settings.open_settings(data);
+		this.settings.open(data);
+	}
+
+	open_pool_host(data) {
+		this.pool_host.open(data);
+	}
+
+	open_pool(data) {
+		this.pool.open(data);
 	}
 }

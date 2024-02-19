@@ -137,7 +137,10 @@ impl<T> From<Thing> for UUID<T> {
 	}
 }
 
-impl<T> UUID<T> {
+impl<T> UUID<T>
+where
+	T: DBRecord,
+{
 	/// Get the Thing (`surrealdb::sql::thing::Thing`) from the UUID.
 	pub fn thing(&self) -> Thing {
 		self.0.to_owned()
@@ -149,9 +152,9 @@ impl<T> UUID<T> {
 	}
 
 	/// Create a new UUID with a random ID for the given table.
-	pub fn new(table: &str) -> Self {
+	pub fn new() -> Self {
 		Thing {
-			tb: table.to_owned(),
+			tb: T::table().to_owned(),
 			id: Id::from(Uuid::new_v4()),
 		}
 		.into()
@@ -179,15 +182,6 @@ impl<T> UUID<T> {
 	{
 		let obj: Option<T> = T::db_by_id(self.id()).await?;
 		Ok(obj)
-	}
-
-	#[allow(dead_code)]
-	pub fn as_str(&self) -> Result<String, Error> {
-		let t = serde_json::to_value(self)?;
-		let t = t
-			.as_str()
-			.ok_or(Error::generic_500("Failed to convert UUID to string"))?;
-		Ok(t.to_owned())
 	}
 }
 
@@ -389,7 +383,7 @@ pub fn random_alphanumeric_string(length: usize) -> String {
 		.collect()
 }
 
-pub async fn get_discord_username(discord_user_id: u64) -> Result<String, Error> {
+pub async fn get_discord_username(discord_user_id: &str) -> Result<String, Error> {
 	let client = reqwest::Client::new();
 
 	let res = client

@@ -1,13 +1,15 @@
-use crate::error::ErrorResponse;
+use crate::dbrecord::DBRecord;
 use crate::generic::BearerToken;
 use crate::models::user::Role;
+use crate::{error::ErrorResponse, models::pool_player::PoolPlayer};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct DashboardResponse {
 	display_name: String,
-	is_admin: bool,
+	roles: Vec<Role>,
+	is_pool_player: bool,
 }
 
 #[rocket::get("/api/page/dashboard")]
@@ -19,6 +21,7 @@ pub async fn dashboard(
 
 	Ok(Json(DashboardResponse {
 		display_name: user.display_name.to_owned(),
-		is_admin: user.has_role(&Role::Admin),
+		roles: user.roles,
+		is_pool_player: PoolPlayer::db_search_one("user", &user.id).await?.is_some(),
 	}))
 }

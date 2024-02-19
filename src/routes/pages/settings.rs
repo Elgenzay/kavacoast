@@ -8,6 +8,7 @@ pub struct SettingsPageResponse {
 	username: String,
 	display_name: String,
 	discord_username: Option<String>,
+	discord_id: Option<String>,
 }
 
 #[rocket::get("/api/page/settings")]
@@ -20,11 +21,11 @@ pub async fn settings(
 	Ok(Json(SettingsPageResponse {
 		username: user.username.to_owned(),
 		display_name: user.display_name.to_owned(),
-
-		discord_username: if let Some(discord_id) = user.discord_id {
+		discord_username: if let Some(discord_id) = &user.discord_id {
 			get_discord_username(discord_id).await.ok()
 		} else {
 			None
 		},
+		discord_id: user.discord_id,
 	}))
 }

@@ -23,16 +23,17 @@ pub struct User {
 	pub username: String,
 	pub display_name: String,
 	pub password_hash: HashedString,
-	pub discord_id: Option<u64>,
+	pub discord_id: Option<String>,
+	pub roles: Vec<Role>,
 	created_at: DateTime<Utc>,
 	updated_at: DateTime<Utc>,
-	roles: Vec<Role>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
 	Admin,
+	PoolHost,
 }
 
 impl DBRecord for User {
@@ -71,7 +72,7 @@ impl User {
 
 		registration.db_delete().await?;
 
-		if let Some(discord_id) = registration.discord_id {
+		if let Some(discord_id) = &registration.discord_id {
 			if User::db_search_one("discord_id", &discord_id)
 				.await?
 				.is_some()
@@ -87,7 +88,7 @@ impl User {
 		Self::verify_password_requirements(&registration_request.password)?;
 
 		let user = Self {
-			id: UUID::new(User::table()),
+			id: UUID::new(),
 			username,
 			display_name: Self::validate_displayname_requirements(
 				&registration_request.display_name,

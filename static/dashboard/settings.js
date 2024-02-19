@@ -1,6 +1,5 @@
 class Settings {
-    open_settings(data) {
-        console.log("Opening settings");
+    open(data) {
         this.current_username = data.username;
         this.current_displayname = data.display_name;
 

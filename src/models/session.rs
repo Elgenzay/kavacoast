@@ -34,7 +34,7 @@ impl Session {
 	/// Create a new Session, without persisting it to the database.
 	pub fn new(user: &UUID<User>) -> Result<Self, Error> {
 		Ok(Self {
-			id: UUID::new(Session::table()),
+			id: UUID::new(),
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
 			user: user.to_owned(),

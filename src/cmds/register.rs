@@ -6,7 +6,7 @@ use serenity::{
 };
 
 pub async fn run(ctx: &Context, user: &User) -> String {
-	let user_id = user.id.get();
+	let user_id = user.id.get().to_string();
 
 	match crate::models::user::User::db_search_one("discord_id", &user_id).await {
 		Ok(user) => {

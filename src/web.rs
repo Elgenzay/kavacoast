@@ -53,6 +53,8 @@ pub async fn start_web() {
 				routes::pages::dashboard::dashboard,
 				routes::pages::admin::admin,
 				routes::pages::settings::settings,
+				routes::pages::pool_host::pool_host,
+				routes::pages::pool::pool,
 				routes::users::change_password,
 				routes::users::update_user,
 			],

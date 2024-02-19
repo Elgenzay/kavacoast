@@ -11,7 +11,7 @@ pub struct Registration {
 	created_at: DateTime<Utc>,
 	updated_at: DateTime<Utc>,
 	registration_key: String,
-	pub discord_id: Option<u64>,
+	pub discord_id: Option<String>,
 }
 
 impl DBRecord for Registration {
@@ -25,9 +25,9 @@ impl DBRecord for Registration {
 }
 
 impl Registration {
-	pub fn new(discord_id: Option<u64>) -> Self {
+	pub fn new(discord_id: Option<String>) -> Self {
 		Self {
-			id: UUID::new(Self::table()),
+			id: UUID::new(),
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
 			registration_key: crate::generic::random_alphanumeric_string(KEY_LENGTH),
