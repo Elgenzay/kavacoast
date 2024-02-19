@@ -89,10 +89,6 @@
 	cursor: default;
 }
 
-.hidden {
-	display: none !important;
-}
-
 #page-error {
 	line-height: 50px;
 	text-align: center;

@@ -1,24 +1,24 @@
 class Settings {
-    open(data) {
-        this.current_username = data.username;
-        this.current_displayname = data.display_name;
+    constructor(parent, data) {
+        parent.show_page("settings", () => {
+            this.current_username = data.username;
+            this.current_displayname = data.display_name;
 
-        this.update_username_button = document.getElementById("settings-change-username-button");
-        this.update_displayname_button = document.getElementById("settings-change-displayname-button");
-        this.update_password_button = document.getElementById("settings-change-password-button");
+            this.update_username_button = document.getElementById("settings-change-username-button");
+            this.update_displayname_button = document.getElementById("settings-change-displayname-button");
+            this.update_password_button = document.getElementById("settings-change-password-button");
 
-        this.update_username_error = document.getElementById("settings-change-username-error");
-        this.update_displayname_error = document.getElementById("settings-change-displayname-error");
-        this.update_password_error = document.getElementById("settings-change-password-error");
+            this.update_username_error = document.getElementById("settings-change-username-error");
+            this.update_displayname_error = document.getElementById("settings-change-displayname-error");
+            this.update_password_error = document.getElementById("settings-change-password-error");
 
-        document.getElementById("settings-change-displayname-input").value = data.display_name;
-        document.getElementById("settings-change-username-input").value = data.username;
+            document.getElementById("settings-change-displayname-input").value = data.display_name;
+            document.getElementById("settings-change-username-input").value = data.username;
 
-        for (let elem of document.getElementsByClassName("discord-username")) {
-            elem.innerText = data.discord_username;
-        }
-
-        Dashboard.show_page("settings");
+            for (let elem of document.getElementsByClassName("discord-username")) {
+                elem.innerText = data.discord_username;
+            }
+        });
     }
 
     username_input(elem) {

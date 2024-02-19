@@ -1,6 +1,7 @@
 class Pool {
-    open(data) {
-        Dashboard.show_page("pool");
-        console.log(data);
+    constructor(parent, data) {
+        parent.show_page("pool", () => {
+            console.log(data);
+        });
     }
 }

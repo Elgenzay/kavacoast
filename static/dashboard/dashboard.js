@@ -39,17 +39,11 @@ class Dashboard {
 
 	constructor() {
 		this.open_loading();
-		this.settings = new Settings();
-		this.pool_host = new PoolHost();
-		this.admin = new Admin();
-		this.pool = new Pool();
 
 		Auth.request("/api/page/dashboard").then(r => {
 			let response = JSON.parse(r);
 
-			for (let elem of document.getElementsByClassName("displayname")) {
-				elem.innerText = response.display_name;
-			}
+			this.displayname = response.display_name;
 
 			for (let k in Dashboard.PAGES) {
 				let page_obj = Dashboard.PAGES[k];
@@ -86,21 +80,47 @@ class Dashboard {
 		});
 	}
 
-	static show_page(page) {
+	show_page(page, callback) {
+		fetch("/dashboard/" + page + ".html")
+			.then(response => {
+				if (!response.ok) {
+					throw new Error("Network response was not ok");
+				}
+				return response.text();
+			})
+			.then(html => {
+				document.getElementById("main-panel").innerHTML = html;
+
+				if (typeof callback === "function") {
+					callback.call(this);
+				}
+
+				this.on_page_load();
+			})
+			.catch(error => {
+				console.error("Page load error:", error);
+
+				if (page !== "error") {
+					this.show_page("error");
+				}
+			});
+	}
+
+	on_page_load() {
 		for (let page_elem of document.getElementsByClassName("page")) {
-			if (page_elem.getAttribute("data-page") === page) {
-				page_elem.classList.remove("hidden");
-			} else {
-				page_elem.classList.add("hidden");
-			}
+			page_elem.style = "";
+		}
+
+		for (let elem of document.getElementsByClassName("displayname")) {
+			elem.innerText = this.displayname;
 		}
 	}
 
 	set_page_url(page) {
 		if (history.pushState) {
 			let newurl = new URL(window.location.href);
-			newurl.searchParams.set('p', page);
-			window.history.pushState({ path: newurl.href }, '', newurl.href);
+			newurl.searchParams.set("p", page);
+			window.history.pushState({ path: newurl.href }, "", newurl.href);
 		}
 	}
 
@@ -173,28 +193,27 @@ class Dashboard {
 		}
 	}
 
-
 	open_loading() {
-		Dashboard.show_page("loading");
+		this.show_page("loading");
 	}
 
 	open_error() {
-		Dashboard.show_page("error");
+		this.show_page("error");
 	}
 
 	open_admin(data) {
-		this.admin.open(data);
+		this.admin = new Admin(this, data);
 	}
 
 	open_settings(data) {
-		this.settings.open(data);
+		this.settings = new Settings(this, data);
 	}
 
 	open_pool_host(data) {
-		this.pool_host.open(data);
+		this.pool_host = new PoolHost(this, data);
 	}
 
 	open_pool(data) {
-		this.pool.open(data);
+		this.pool = new Pool(this, data);
 	}
 }
