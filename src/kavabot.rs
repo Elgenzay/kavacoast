@@ -5,25 +5,15 @@ use serde::{Deserialize, Serialize};
 use serenity::all::Interaction;
 use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::framework::standard::StandardFramework;
-use serenity::gateway::ShardManager;
 use serenity::model::channel::{Reaction, ReactionType};
 use serenity::model::gateway::Ready;
 use serenity::model::guild::Member;
 use serenity::model::prelude::RoleId;
-use serenity::prelude::Mutex;
 use serenity::prelude::*;
 use serenity::utils::ArgumentConvert;
 use std::fs;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::{task, time};
-
-struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-	type Value = Arc<Mutex<ShardManager>>;
-}
 
 struct BotData;
 
@@ -86,7 +76,7 @@ impl EventHandler for Handler {
 				"ping" => Some(cmds::ping::run(command.data.options().as_slice())),
 				"register" => Some(cmds::register::run(&ctx, &command.user).await),
 				"resetpassword" => Some(cmds::resetpassword::run(&ctx, &command.user).await),
-				_ => Some(String::new()),
+				_ => Some("Unknown command".to_string()),
 			};
 
 			if let Some(content) = content {
@@ -275,7 +265,11 @@ pub async fn start_bot() {
 		| GatewayIntents::GUILD_MESSAGE_REACTIONS
 		| GatewayIntents::MESSAGE_CONTENT;
 
-	let framework = StandardFramework::new();
+	#[allow(deprecated)]
+	// Continuing to use StandardFramework due to the lack of a clear migration path to `poise`
+	// and the absence of compelling reasons to undertake a major refactor at this time.
+	// I'll migrate when the official examples do.
+	let framework = serenity::framework::standard::StandardFramework::new();
 
 	let mut client = Client::builder(token, intents)
 		.event_handler(Handler)

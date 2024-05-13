@@ -57,6 +57,8 @@ pub async fn start_web() {
 				routes::pages::pool::pool,
 				routes::users::change_password,
 				routes::users::update_user,
+				routes::users::create_referral,
+				routes::users::delete_referral,
 			],
 		)
 		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))

@@ -8,6 +8,7 @@ use crate::models::session::Session;
 use crate::routes::users::RegistrationRequest;
 use chrono::DateTime;
 use chrono::Utc;
+use either::Either;
 use rocket::http::Status;
 use serde::Deserialize;
 use serde::Serialize;
@@ -16,8 +17,7 @@ const NAME_MIN_LENGTH: usize = 2;
 const NAME_MAX_LENGTH: usize = 32;
 const PASSWORD_MIN_LENGTH: usize = 8;
 
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
+#[derive(Serialize, Deserialize)]
 pub struct User {
 	pub id: UUID<User>,
 	pub username: String,
@@ -25,6 +25,9 @@ pub struct User {
 	pub password_hash: HashedString,
 	pub discord_id: Option<String>,
 	pub roles: Vec<Role>,
+	pub referral_registrations: Vec<UUID<Registration>>,
+	pub referred_users: Vec<UUID<User>>,
+	pub referred_by: Option<UUID<User>>,
 	created_at: DateTime<Utc>,
 	updated_at: DateTime<Utc>,
 }
@@ -72,20 +75,24 @@ impl User {
 
 		registration.db_delete().await?;
 
-		if let Some(discord_id) = &registration.discord_id {
-			if User::db_search_one("discord_id", &discord_id)
-				.await?
-				.is_some()
-			{
-				return Err(Error::new(
-					Status::BadRequest,
-					"A user with this Discord ID already exists.", // This shouldn't actually happen, but just in case.
-					None,
-				));
-			};
-		}
-
 		Self::verify_password_requirements(&registration_request.password)?;
+
+		let (referred_by, discord_id) = match registration.referrer_or_discord {
+			Either::Right(discord_id) => {
+				if User::db_search_one("discord_id", &discord_id)
+					.await?
+					.is_some()
+				{
+					return Err(Error::new(
+						Status::BadRequest,
+						"A user with this Discord ID already exists.", // This shouldn't actually happen, but just in case.
+						None,
+					));
+				};
+				(None, Some(discord_id))
+			}
+			Either::Left(referred_by) => (Some(referred_by), None),
+		};
 
 		let user = Self {
 			id: UUID::new(),
@@ -94,10 +101,13 @@ impl User {
 				&registration_request.display_name,
 			)?,
 			password_hash: HashedString::new(&registration_request.password)?,
-			discord_id: registration.discord_id,
+			discord_id,
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
 			roles: vec![],
+			referral_registrations: vec![],
+			referred_users: vec![],
+			referred_by,
 		};
 
 		user.db_create().await?;
@@ -200,5 +210,25 @@ impl User {
 			.await?;
 
 		Ok(())
+	}
+
+	/// Get referral registrations, removing any that don't exist from the user.
+	pub async fn get_referral_registrations(&self) -> Result<Vec<Registration>, Error> {
+		let mut referrals = vec![];
+
+		for referral in &self.referral_registrations {
+			if let Ok(Some(registration)) = Registration::db_by_id(referral.id()).await {
+				referrals.push(registration);
+			}
+		}
+
+		let referral_ids = referrals.iter().map(|r| r.uuid()).collect::<Vec<_>>();
+
+		if referral_ids.len() != self.referral_registrations.len() {
+			self.db_update_field("referral_registrations", &referral_ids)
+				.await?;
+		}
+
+		Ok(referrals)
 	}
 }

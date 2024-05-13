@@ -8,7 +8,7 @@ use serenity::{
 const RANDOM_PASSWORD_LENGTH: usize = 32;
 
 pub async fn run(ctx: &Context, discord_user: &User) -> String {
-	let user_id = discord_user.id.get();
+	let user_id = discord_user.id.get().to_string();
 
 	match crate::models::user::User::db_search_one("discord_id", &user_id).await {
 		Ok(user) => {

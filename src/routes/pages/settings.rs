@@ -9,6 +9,7 @@ pub struct SettingsPageResponse {
 	display_name: String,
 	discord_username: Option<String>,
 	discord_id: Option<String>,
+	referrals: Vec<String>,
 }
 
 #[rocket::get("/api/page/settings")]
@@ -18,14 +19,24 @@ pub async fn settings(
 	let session = bearer_token.validate().await?;
 	let user = session.user.object().await?;
 
+	let referrals = user
+		.get_referral_registrations()
+		.await?
+		.iter()
+		.map(|r| r.registration_key.to_owned())
+		.collect();
+
+	let discord_username = if let Some(discord_id) = &user.discord_id {
+		get_discord_username(discord_id).await.ok()
+	} else {
+		None
+	};
+
 	Ok(Json(SettingsPageResponse {
 		username: user.username.to_owned(),
 		display_name: user.display_name.to_owned(),
-		discord_username: if let Some(discord_id) = &user.discord_id {
-			get_discord_username(discord_id).await.ok()
-		} else {
-			None
-		},
+		discord_username,
 		discord_id: user.discord_id,
+		referrals,
 	}))
 }

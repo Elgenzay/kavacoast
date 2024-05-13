@@ -5,7 +5,6 @@ use crate::{
 use async_trait::async_trait;
 use chrono::Utc;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::Value;
 use std::{
 	any::Any,
 	collections::HashMap,
@@ -18,7 +17,7 @@ use surrealdb::sql::{Id, Thing};
 /// This trait should be implemented for concrete types.
 /// For generic types, use the `GenericResource` struct instead.
 #[async_trait]
-pub trait DBRecord: Default + Any + Serialize + DeserializeOwned + Send + Sync {
+pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 	/// Get the associated table name
 	fn table() -> &'static str;
 
@@ -154,6 +153,7 @@ pub trait DBRecord: Default + Any + Serialize + DeserializeOwned + Send + Sync {
 	/// For each record in the table, add any missing properties with default values to the record in the database.
 	///
 	/// Record retrieval already uses default values for missing fields, but this exists just in case it's ever needed.
+	#[allow(unused)]
 	async fn db_refresh_table() -> Result<(), Error> {
 		let result = Self::db_all().await?;
 		let db = surrealdb_client().await?;
@@ -166,10 +166,6 @@ pub trait DBRecord: Default + Any + Serialize + DeserializeOwned + Send + Sync {
 		log::info!("Table refreshed: {}", table);
 
 		Ok(())
-	}
-
-	async fn default_value() -> Value {
-		serde_json::to_value(&Self::default()).unwrap()
 	}
 }
 

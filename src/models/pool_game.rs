@@ -2,7 +2,7 @@ use crate::{dbrecord::DBRecord, generic::UUID};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct PoolGame {
 	pub id: UUID<PoolGame>,
 	created_at: DateTime<Utc>,

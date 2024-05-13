@@ -18,7 +18,36 @@ class Settings {
             for (let elem of document.getElementsByClassName("discord-username")) {
                 elem.innerText = data.discord_username;
             }
+
+            let referrals_container = document.getElementById("referral-list-container");
+
+            for (let referral of data.referrals) {
+                let referral_elem = this.referral_element(referral);
+                referrals_container.appendChild(referral_elem);
+            }
+
         });
+    }
+
+    referral_element(registration_key) {
+        let referral_elem = document.createElement("div");
+        referral_elem.className = "section";
+        let input = document.createElement("input");
+        input.type = "text";
+        input.value = `https://kavacoast.com/register?k=${registration_key}`;
+        input.readOnly = true;
+        referral_elem.appendChild(input);
+
+        let img = document.createElement("img");
+        img.src = "/resources/i/copy.png";
+        img.className = "copy-button";
+        referral_elem.appendChild(img);
+
+        let button = document.createElement("button");
+        button.innerText = "Revoke";
+        referral_elem.appendChild(button);
+
+        return referral_elem;
     }
 
     username_input(elem) {
@@ -128,5 +157,9 @@ class Settings {
             Dashboard.display_error(e, this.update_displayname_error);
             this.update_displayname_button.disabled = false;
         });
+    }
+
+    create_referral() {
+        console.log("todo");
     }
 }

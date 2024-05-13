@@ -29,10 +29,7 @@ pub async fn run(ctx: &Context, user: &User) -> String {
 		Ok(None) => (),
 	};
 
-	match Registration::new(Some(user_id.to_owned()))
-		.db_create()
-		.await
-	{
+	match Registration::from_discord_id(&user_id).db_create().await {
 		Ok(registration) => {
 			let builder = CreateMessage::new().content(registration.dm_string());
 

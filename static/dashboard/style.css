@@ -180,3 +180,26 @@ button {
 .error-message {
 	color: crimson;
 }
+
+#referral-list-container {
+	flex-direction: column;
+}
+
+#referral-list-container div {
+	flex-direction: row;
+	justify-content: flex-start;
+}
+
+#referral-list-container input {
+	width: 100%;
+	direction: rtl;
+}
+
+.copy-button {
+	opacity: 0.75;
+}
+
+.copy-button:hover {
+	opacity: 1;
+	cursor: pointer;
+}
