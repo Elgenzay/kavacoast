@@ -1,9 +1,13 @@
-use crate::dbrecord::DBRecord;
-use crate::error::{Error, ErrorResponse};
-use crate::generic::BearerToken;
-use crate::models::pool_game::PoolGame;
-use crate::models::pool_player::PoolPlayer;
-use crate::models::user::{Role, User};
+use crate::{
+	dbrecord::DBRecord,
+	error::{Error, ErrorResponse},
+	generic::BearerToken,
+	models::{
+		pool_game::PoolGame,
+		pool_player::PoolPlayer,
+		user::{Role, User},
+	},
+};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 

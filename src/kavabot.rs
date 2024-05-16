@@ -1,18 +1,20 @@
-use crate::cmds;
-use crate::generic::Environment;
+use crate::{cmds, generic::Environment};
 use chrono::{Datelike, TimeZone, Utc, Weekday};
 use serde::{Deserialize, Serialize};
-use serenity::all::Interaction;
-use serenity::async_trait;
-use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::channel::{Reaction, ReactionType};
-use serenity::model::gateway::Ready;
-use serenity::model::guild::Member;
-use serenity::model::prelude::RoleId;
-use serenity::prelude::*;
-use serenity::utils::ArgumentConvert;
-use std::fs;
-use std::time::Duration;
+use serenity::{
+	all::Interaction,
+	async_trait,
+	builder::{CreateInteractionResponse, CreateInteractionResponseMessage},
+	model::{
+		channel::{Reaction, ReactionType},
+		gateway::Ready,
+		guild::Member,
+		prelude::RoleId,
+	},
+	prelude::*,
+	utils::ArgumentConvert,
+};
+use std::{fs, time::Duration};
 use tokio::{task, time};
 
 struct BotData;

@@ -1,5 +1,4 @@
-use crate::models::user::User;
-use crate::{dbrecord::DBRecord, generic::UUID};
+use crate::{dbrecord::DBRecord, generic::UUID, models::user::User};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 

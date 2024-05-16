@@ -1,17 +1,14 @@
-use crate::dbrecord::DBRecord;
-use crate::error::Error;
-use crate::generic::Expirable;
-use crate::generic::HashedString;
-use crate::generic::UUID;
-use crate::models::registration::Registration;
-use crate::models::session::Session;
-use crate::routes::users::RegistrationRequest;
-use chrono::DateTime;
-use chrono::Utc;
+use crate::{
+	dbrecord::DBRecord,
+	error::Error,
+	generic::{Expirable, HashedString, UUID},
+	models::{registration::Registration, session::Session},
+	routes::users::RegistrationRequest,
+};
+use chrono::{DateTime, Utc};
 use either::Either;
 use rocket::http::Status;
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const NAME_MIN_LENGTH: usize = 2;
 const NAME_MAX_LENGTH: usize = 32;

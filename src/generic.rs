@@ -15,8 +15,7 @@ use rocket::{
 	request::{FromRequest, Outcome},
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::HashMap;
-use std::marker::PhantomData;
+use std::{collections::HashMap, marker::PhantomData};
 use surrealdb::{
 	engine::remote::ws::Ws,
 	opt::auth::Root,

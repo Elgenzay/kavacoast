@@ -1,14 +1,13 @@
-use crate::routes;
-use rocket::fs::{relative, NamedFile};
-use rocket::response::Redirect;
-use rocket::serde::json::Json;
-use rocket::shield::Hsts;
-use rocket::shield::Shield;
-use rocket::time::Duration;
+use crate::{generic::Environment, routes};
+use rocket::{
+	fs::{relative, NamedFile},
+	response::Redirect,
+	serde::json::Json,
+	shield::{Hsts, Shield},
+	time::Duration,
+};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-
-use crate::generic::Environment;
 
 #[rocket::get("/<path..>")]
 pub async fn static_pages(path: PathBuf) -> Option<NamedFile> {

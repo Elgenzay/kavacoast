@@ -1,7 +1,9 @@
-use crate::dbrecord::DBRecord;
-use crate::error::Error;
-use crate::generic::{Environment, Expirable, HashedString, JwtClaims, UUID};
-use crate::models::user::User;
+use crate::{
+	dbrecord::DBRecord,
+	error::Error,
+	generic::{Environment, Expirable, HashedString, JwtClaims, UUID},
+	models::user::User,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::{Id, Uuid};

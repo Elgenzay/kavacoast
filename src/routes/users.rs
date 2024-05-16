@@ -1,19 +1,18 @@
-use crate::dbrecord::DBRecord;
-use crate::error::Error;
-use crate::error::ErrorResponse;
-use crate::generic::BearerToken;
-use crate::generic::GenericOkResponse;
-use crate::models::registration::Registration;
-use crate::models::session::Session;
-use crate::models::user::Role;
-use crate::models::user::User;
-use crate::routes::token::token;
-use crate::routes::token::TokenRequest;
-use crate::routes::token::TokenResponse;
+use crate::{
+	dbrecord::DBRecord,
+	error::{Error, ErrorResponse},
+	generic::{BearerToken, GenericOkResponse},
+	models::{
+		registration::Registration,
+		session::Session,
+		user::{Role, User},
+	},
+	routes::token::{token, TokenRequest, TokenResponse},
+};
 use core::str;
 use either::Either;
-use rocket::http::Status;
 use rocket::{
+	http::Status,
 	response::status,
 	serde::{json::Json, Deserialize, Serialize},
 };

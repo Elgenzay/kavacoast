@@ -1,7 +1,9 @@
-use crate::dbrecord::DBRecord;
-use crate::error::{Error, ErrorResponse};
-use crate::generic::BearerToken;
-use crate::models::pool_player::PoolPlayer;
+use crate::{
+	dbrecord::DBRecord,
+	error::{Error, ErrorResponse},
+	generic::BearerToken,
+	models::pool_player::PoolPlayer,
+};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 

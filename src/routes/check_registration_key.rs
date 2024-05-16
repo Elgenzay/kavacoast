@@ -1,8 +1,11 @@
-use crate::error::{Error, ErrorResponse};
-use crate::generic::GenericOkResponse;
-use crate::{dbrecord::DBRecord, models::registration::Registration};
-use rocket::http::Status;
+use crate::{
+	dbrecord::DBRecord,
+	error::{Error, ErrorResponse},
+	generic::GenericOkResponse,
+	models::registration::Registration,
+};
 use rocket::{
+	http::Status,
 	response::status,
 	serde::{json::Json, Deserialize},
 };

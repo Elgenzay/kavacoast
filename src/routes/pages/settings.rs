@@ -1,5 +1,7 @@
-use crate::generic::BearerToken;
-use crate::{error::ErrorResponse, generic::get_discord_username};
+use crate::{
+	error::ErrorResponse,
+	generic::{get_discord_username, BearerToken},
+};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 

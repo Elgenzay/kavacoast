@@ -1,6 +1,8 @@
-use crate::error::{Error, ErrorResponse};
-use crate::generic::BearerToken;
-use crate::models::user::Role;
+use crate::{
+	error::{Error, ErrorResponse},
+	generic::BearerToken,
+	models::user::Role,
+};
 use rocket::{response::status, serde::json::Json};
 use serde::Serialize;
 
