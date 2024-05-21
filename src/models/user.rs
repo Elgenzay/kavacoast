@@ -25,8 +25,26 @@ pub struct User {
 	pub referral_registrations: Vec<UUID<Registration>>,
 	pub referred_users: Vec<UUID<User>>,
 	pub referred_by: Option<UUID<User>>,
-	created_at: DateTime<Utc>,
-	updated_at: DateTime<Utc>,
+	pub created_at: DateTime<Utc>,
+	pub updated_at: DateTime<Utc>,
+}
+
+impl Default for User {
+	fn default() -> Self {
+		Self {
+			id: UUID::new(),
+			username: "".to_owned(),
+			display_name: "".to_owned(),
+			password_hash: HashedString::new("").unwrap(),
+			discord_id: None,
+			roles: vec![],
+			referral_registrations: vec![],
+			referred_users: vec![],
+			referred_by: None,
+			created_at: Utc::now(),
+			updated_at: Utc::now(),
+		}
+	}
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -101,10 +119,8 @@ impl User {
 			discord_id,
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
-			roles: vec![],
-			referral_registrations: vec![],
-			referred_users: vec![],
 			referred_by,
+			..Default::default()
 		};
 
 		user.db_create().await?;

@@ -127,7 +127,7 @@ pub async fn create_referral(
 	bearer_token: BearerToken,
 ) -> Result<Json<RequestReferral>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = get_user(id, session).await?;
+	let mut user = get_user(id, session).await?;
 
 	if user.referral_registrations.len() >= 5 {
 		return Err(Error::new(Status::BadRequest, "Too many referral links active", None).into());
@@ -143,6 +143,7 @@ pub async fn create_referral(
 	}
 
 	let registration = Registration::from_user(&user).db_create().await?;
+	user.referral_registrations.push(registration.uuid());
 
 	Ok(Json(RequestReferral {
 		key: registration.registration_key,

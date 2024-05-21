@@ -167,6 +167,14 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 
 		Ok(())
 	}
+
+	async fn db_delete_table() -> Result<(), Error> {
+		let db = surrealdb_client().await?;
+		let table = Self::table();
+		db.set("table", table).await?;
+		db.query(format!("REMOVE TABLE {}", table)).await?;
+		Ok(())
+	}
 }
 
 pub enum SQLCommand {
