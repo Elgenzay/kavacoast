@@ -45,7 +45,8 @@
 					</div>
 					<div>
 						<label for="password">Password</label>
-						<input type="password" id="password" name="password" oninput="login.input('password')">
+						<input type="password" id="password" name="password" oninput="login.input('password')"
+							onkeydown="login.handle_enter(event)">
 					</div>
 					<div class="submit-wrapper">
 						<button id="submit" type="submit" onclick="login.submit()" disabled>Sign in</button>

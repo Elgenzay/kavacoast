@@ -30,7 +30,7 @@ pub async fn pool_host(
 	bearer_token: BearerToken,
 ) -> Result<Json<PoolHostPageResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = session.user.object().await?;
+	let user = session.user().await?;
 
 	if !user.has_role(&Role::PoolHost) {
 		return Err(Error::forbidden().into());

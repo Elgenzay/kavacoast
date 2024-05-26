@@ -19,7 +19,7 @@ pub async fn settings(
 	bearer_token: BearerToken,
 ) -> Result<Json<SettingsPageResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = session.user.object().await?;
+	let user = session.user().await?;
 
 	let referrals = user
 		.get_referral_registrations()

@@ -5,6 +5,7 @@ use crate::{
 	models::user::User,
 };
 use chrono::{DateTime, Utc};
+use rocket::http::Status;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::{Id, Uuid};
 
@@ -16,7 +17,7 @@ pub struct Session {
 	pub id: UUID<Session>,
 	created_at: DateTime<Utc>,
 	updated_at: DateTime<Utc>,
-	pub user: UUID<User>,
+	user: UUID<User>,
 	pub refresh_token_hash: HashedString,
 	pub refresh_token_issued_at: DateTime<Utc>,
 }
@@ -113,6 +114,13 @@ impl Session {
 			&encoding_key,
 		)
 		.map_err(|e| Error::generic_500(&format!("Error encoding new JWT: {:?}", e)))
+	}
+
+	pub async fn user(&self) -> Result<User, Error> {
+		self.user
+			.object_opt()
+			.await?
+			.ok_or_else(|| Error::new(Status::Unauthorized, "Session user not found", None))
 	}
 }
 

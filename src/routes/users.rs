@@ -46,18 +46,17 @@ pub async fn register(
 /// the same as the user with the ID or if the session's user is an admin.
 async fn get_user(id: &str, session: Session) -> Result<User, Error> {
 	if id == "me" {
-		session.user.object().await
+		session.user().await
 	} else {
 		match User::db_by_id(Id::from(id)).await? {
-			Some(user) => {
-				if user.id != session.user && !session.user.object().await?.has_role(&Role::Admin) {
-					return Err(Error::new(
-						Status::Unauthorized,
-						"Insufficient permissions",
-						None,
-					));
+			Some(target_user) => {
+				let session_user = session.user().await?;
+
+				if target_user.id != session_user.uuid() && !session_user.has_role(&Role::Admin) {
+					return Err(Error::insufficient_permissions());
 				}
-				Ok(user)
+
+				Ok(target_user)
 			}
 			None => Err(Error::new(Status::NotFound, "User not found", None)),
 		}
@@ -92,6 +91,11 @@ pub async fn change_password(
 pub struct UpdateUserRequest {
 	pub username: Option<String>,
 	pub display_name: Option<String>,
+
+	/// Only admins can change the password of a user with this endpoint.
+	/// Users can change their own password by using the change_password endpoint.
+	/// This is because users must provide their current password to change it.
+	pub password: Option<String>,
 }
 
 #[rocket::patch("/api/users/<id>", format = "json", data = "<request>")]
@@ -101,7 +105,8 @@ pub async fn update_user(
 	bearer_token: BearerToken,
 ) -> Result<Json<GenericOkResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = get_user(id, session).await?;
+	let is_admin_request = session.user().await?.has_role(&Role::Admin);
+	let mut user = get_user(id, session).await?;
 
 	if let Some(username) = &request.username {
 		let username = User::validate_username_requirements(username)?;
@@ -113,7 +118,35 @@ pub async fn update_user(
 		user.db_update_field("display_name", &display_name).await?;
 	}
 
+	if is_admin_request {
+		if let Some(password) = &request.password {
+			user.set_password(password).await?;
+		}
+	}
+
 	Ok(Json(GenericOkResponse::new()))
+}
+
+/// Get every user in the database. Admins only.
+#[rocket::get("/api/users")]
+pub async fn get_users(
+	bearer_token: BearerToken,
+) -> Result<Json<Vec<User>>, status::Custom<Json<ErrorResponse>>> {
+	let session = bearer_token.validate().await?;
+	let user = session.user().await?;
+
+	if !user.has_role(&Role::Admin) {
+		return Err(Error::insufficient_permissions().into());
+	}
+
+	let mut users = User::db_all().await?;
+
+	// Don't include password hashes in the response
+	for user in &mut users {
+		user.password_hash = Default::default();
+	}
+
+	Ok(Json(users))
 }
 
 #[derive(Serialize, Deserialize)]

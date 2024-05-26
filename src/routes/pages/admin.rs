@@ -8,7 +8,7 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct AdminPageResponse {
-	//
+	all_roles: Vec<Role>,
 }
 
 #[rocket::get("/api/page/admin")]
@@ -16,11 +16,13 @@ pub async fn admin(
 	bearer_token: BearerToken,
 ) -> Result<Json<AdminPageResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = session.user.object().await?;
+	let user = session.user().await?;
 
 	if !user.has_role(&Role::Admin) {
 		return Err(Error::forbidden().into());
 	}
 
-	Ok(Json(AdminPageResponse {}))
+	Ok(Json(AdminPageResponse {
+		all_roles: Role::all(),
+	}))
 }

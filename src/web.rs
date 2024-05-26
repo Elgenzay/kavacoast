@@ -55,6 +55,7 @@ pub async fn start_web() {
 				routes::pages::pool_host::pool_host,
 				routes::pages::pool::pool,
 				routes::users::change_password,
+				routes::users::get_users,
 				routes::users::update_user,
 				routes::users::create_referral,
 				routes::users::delete_referral,

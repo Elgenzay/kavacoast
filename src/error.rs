@@ -43,6 +43,11 @@ impl Error {
 		Self::new(Status::Unauthorized, "Invalid credentials", None)
 	}
 
+	/// Create a 401 (Unauthorized) error with an "Insufficient permissions" message.
+	pub fn insufficient_permissions() -> Self {
+		Self::new(Status::Unauthorized, "Insufficient permissions", None)
+	}
+
 	/// Create a 404 (Not Found) error with a message specific to a user not being found.
 	pub fn user_not_found() -> Self {
 		Self::not_found("User not found")

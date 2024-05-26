@@ -80,4 +80,10 @@ class Login {
 			info_wrapper.style.display = "none";
 		}
 	}
+
+	handle_enter(event) {
+		if (event.key === 'Enter') {
+			this.submit();
+		}
+	}
 }

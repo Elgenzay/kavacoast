@@ -17,7 +17,7 @@ pub async fn pool(
 	bearer_token: BearerToken,
 ) -> Result<Json<PoolResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = session.user.object().await?;
+	let user = session.user().await?;
 
 	let player = PoolPlayer::db_search_one("user", &user.id)
 		.await?

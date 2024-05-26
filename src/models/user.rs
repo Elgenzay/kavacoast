@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use either::Either;
 use rocket::http::Status;
 use serde::{Deserialize, Serialize};
+use strum::{EnumIter, IntoEnumIterator};
 
 const NAME_MIN_LENGTH: usize = 2;
 const NAME_MAX_LENGTH: usize = 32;
@@ -35,7 +36,7 @@ impl Default for User {
 			id: UUID::new(),
 			username: "".to_owned(),
 			display_name: "".to_owned(),
-			password_hash: HashedString::new("").unwrap(),
+			password_hash: Default::default(),
 			discord_id: None,
 			roles: vec![],
 			referral_registrations: vec![],
@@ -47,11 +48,17 @@ impl Default for User {
 	}
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
 	Admin,
 	PoolHost,
+}
+
+impl Role {
+	pub fn all() -> Vec<Self> {
+		Role::iter().collect()
+	}
 }
 
 impl DBRecord for User {

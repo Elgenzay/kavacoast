@@ -19,7 +19,7 @@ pub async fn dashboard(
 	bearer_token: BearerToken,
 ) -> Result<Json<DashboardResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user = session.user.object().await?;
+	let user = session.user().await?;
 
 	Ok(Json(DashboardResponse {
 		display_name: user.display_name.to_owned(),

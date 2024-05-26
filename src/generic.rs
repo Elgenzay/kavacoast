@@ -219,7 +219,7 @@ impl<T> PartialEq for UUID<T> {
 }
 
 /// An Argon2 hashed string, hashed with `new()` and verified with `verify()`
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HashedString(String);
 
 impl HashedString {
@@ -246,12 +246,6 @@ impl HashedString {
 		Ok(Argon2::default()
 			.verify_password(password.as_bytes(), &refresh_token_hash)
 			.is_ok())
-	}
-}
-
-impl Default for HashedString {
-	fn default() -> Self {
-		Self::new("").expect("Unexpected HashedString::default() failure")
 	}
 }
 
