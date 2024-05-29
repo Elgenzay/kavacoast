@@ -34,6 +34,20 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 		self.uuid().thing()
 	}
 
+	/// Whether records should be moved to a table named `trashed_{table}` on `db_delete()`
+	fn use_trash() -> bool {
+		false
+	}
+
+	/// This method is called immediately before a record is deleted by `db_delete()`.
+	///
+	/// Override this method to perform checks or cleanup tasks before the object's deletion.
+	///
+	/// If the method returns an `Error`, the deletion will be aborted and `db_delete()` will return the error.
+	fn delete_hook(&self) -> Result<(), Error> {
+		Ok(())
+	}
+
 	/// Get an object from SurrealDB by its ID, or `None` if not found.
 	///
 	/// Returns an `Error` if SurrealDB unexpectedly fails.
@@ -97,12 +111,33 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 	async fn db_create(&self) -> Result<Self, Error> {
 		let db = surrealdb_client().await?;
 		let created: Option<Self> = db.create(self.thing()).content(&self).await?;
-		created.ok_or_else(|| Error::generic_500("Failed to create record"))
+
+		created
+			.ok_or_else(|| Error::generic_500(&format!("Failed to create record: {}", self.id())))
 	}
 
 	/// Delete a record from the database.
 	async fn db_delete(&self) -> Result<(), Error> {
 		let db = surrealdb_client().await?;
+		self.delete_hook()?;
+
+		if Self::use_trash() {
+			let created: Option<Self> = db
+				.create(Thing {
+					tb: format!("trashed_{}", Self::table()),
+					id: self.id(),
+				})
+				.content(&self)
+				.await?;
+
+			created.ok_or_else(|| {
+				Error::generic_500(&format!(
+					"Failed to create trash table record: {}",
+					self.id()
+				))
+			})?;
+		}
+
 		let _: Option<Self> = db.delete(self.thing()).await?;
 		Ok(())
 	}
