@@ -127,6 +127,17 @@ pub async fn update_user(
 	Ok(Json(GenericOkResponse::new()))
 }
 
+#[rocket::delete("/api/users/<id>")]
+pub async fn delete_user(
+	id: &str,
+	bearer_token: BearerToken,
+) -> Result<Json<GenericOkResponse>, status::Custom<Json<ErrorResponse>>> {
+	let session = bearer_token.validate().await?;
+	let user = get_user(id, session).await?;
+	user.db_delete().await?;
+	Ok(Json(GenericOkResponse::new()))
+}
+
 /// Get every user in the database. Admins only.
 #[rocket::get("/api/users")]
 pub async fn get_users(

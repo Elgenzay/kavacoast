@@ -44,7 +44,7 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 	/// Override this method to perform checks or cleanup tasks before the object's deletion.
 	///
 	/// If the method returns an `Error`, the deletion will be aborted and `db_delete()` will return the error.
-	fn delete_hook(&self) -> Result<(), Error> {
+	async fn delete_hook(&self) -> Result<(), Error> {
 		Ok(())
 	}
 
@@ -119,7 +119,7 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 	/// Delete a record from the database.
 	async fn db_delete(&self) -> Result<(), Error> {
 		let db = surrealdb_client().await?;
-		self.delete_hook()?;
+		self.delete_hook().await?;
 
 		if Self::use_trash() {
 			let created: Option<Self> = db

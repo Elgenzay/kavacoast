@@ -5,6 +5,7 @@ use crate::{
 	models::{registration::Registration, session::Session},
 	routes::users::RegistrationRequest,
 };
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use either::Either;
 use rocket::http::Status;
@@ -61,6 +62,7 @@ impl Role {
 	}
 }
 
+#[async_trait]
 impl DBRecord for User {
 	fn table() -> &'static str {
 		"users"
@@ -68,6 +70,18 @@ impl DBRecord for User {
 
 	fn uuid(&self) -> UUID<Self> {
 		self.id.to_owned()
+	}
+
+	async fn delete_hook(&self) -> Result<(), Error> {
+		for registration_uuid in self.referral_registrations.iter() {
+			let registration = Registration::db_by_id(registration_uuid.id()).await?;
+
+			if let Some(registration) = registration {
+				registration.db_delete().await?;
+			}
+		}
+
+		Ok(())
 	}
 }
 

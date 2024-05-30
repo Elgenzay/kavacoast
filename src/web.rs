@@ -57,6 +57,7 @@ pub async fn start_web() {
 				routes::users::change_password,
 				routes::users::get_users,
 				routes::users::update_user,
+				routes::users::delete_user,
 				routes::users::create_referral,
 				routes::users::delete_referral,
 			],
