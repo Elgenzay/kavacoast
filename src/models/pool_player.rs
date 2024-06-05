@@ -19,6 +19,10 @@ impl DBRecord for PoolPlayer {
 	fn uuid(&self) -> UUID<Self> {
 		self.id.to_owned()
 	}
+
+	fn use_trash() -> bool {
+		true
+	}
 }
 
 #[allow(dead_code)]
@@ -40,9 +44,9 @@ impl PoolPlayer {
 		}
 	}
 
-	pub fn with_descriptor(self, descriptor: String) -> Self {
+	pub fn with_descriptor(self, descriptor: &str) -> Self {
 		Self {
-			descriptor: Some(descriptor),
+			descriptor: Some(descriptor.to_owned()),
 			..self
 		}
 	}

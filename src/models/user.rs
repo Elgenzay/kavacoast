@@ -83,6 +83,10 @@ impl DBRecord for User {
 
 		Ok(())
 	}
+
+	fn use_trash() -> bool {
+		true
+	}
 }
 
 impl User {
