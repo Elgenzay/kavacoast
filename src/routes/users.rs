@@ -1,7 +1,7 @@
 use crate::{
 	dbrecord::DBRecord,
 	error::{Error, ErrorResponse},
-	generic::{BearerToken, GenericOkResponse},
+	generic::{BearerToken, GenericOkResponse, UUID},
 	models::{
 		registration::Registration,
 		session::Session,
@@ -189,6 +189,9 @@ pub async fn create_referral(
 	let registration = Registration::from_user(&user).db_create().await?;
 	user.referral_registrations.push(registration.uuid());
 
+	user.db_update_field("referral_registrations", &user.referral_registrations)
+		.await?;
+
 	Ok(Json(RequestReferral {
 		key: registration.registration_key,
 	}))
@@ -201,7 +204,7 @@ pub async fn delete_referral(
 	bearer_token: BearerToken,
 ) -> Result<Json<GenericOkResponse>, status::Custom<Json<ErrorResponse>>> {
 	let session = bearer_token.validate().await?;
-	let user: User = get_user(id, session).await?;
+	let user = get_user(id, session).await?;
 
 	let registration = Registration::db_search_one("registration_key", &request.key)
 		.await?
@@ -210,15 +213,14 @@ pub async fn delete_referral(
 	if let Either::Left(referred_by) = &registration.referrer_or_discord {
 		if referred_by == &user.id {
 			registration.db_delete().await?;
-			let mut new_referrals = vec![];
 
-			for ref_uuid in &user.referral_registrations {
-				if let Some(referral) = Registration::db_by_id(ref_uuid.id()).await? {
-					if referral.registration_key != request.key {
-						new_referrals.push(registration.uuid());
-					}
-				}
-			}
+			let new_referrals: Vec<UUID<Registration>> = user
+				.get_referral_registrations()
+				.await?
+				.into_iter()
+				.filter(|r| r.registration_key != request.key)
+				.map(|r| r.uuid())
+				.collect();
 
 			user.db_update_field("referral_registrations", &new_referrals)
 				.await?;
@@ -233,4 +235,22 @@ pub async fn delete_referral(
 		None,
 	)
 	.into())
+}
+
+#[rocket::get("/api/users/<id>/referrals")]
+pub async fn get_referrals(
+	id: &str,
+	bearer_token: BearerToken,
+) -> Result<Json<Vec<String>>, status::Custom<Json<ErrorResponse>>> {
+	let session = bearer_token.validate().await?;
+	let user = get_user(id, session).await?;
+
+	let referrals = user
+		.get_referral_registrations()
+		.await?
+		.iter()
+		.map(|r| r.registration_key.to_owned())
+		.collect();
+
+	Ok(Json(referrals))
 }

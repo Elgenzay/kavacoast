@@ -1,16 +1,17 @@
-function copy() {
-	let link_elem = document.getElementById("direct_invite_link");
-	link_elem.select();
+function copy(input, tooltip) {
+	input.select();
 
 	if (navigator.clipboard) {
-		navigator.clipboard.writeText(link_elem.value)
+		navigator.clipboard.writeText(input.value)
 	} else { // browser not compatible
 		document.execCommand("copy");
 	}
 
-	document.getElementById("copied").classList.add("copied");
+	if (tooltip) {
+		tooltip.classList.add("copied");
+	}
 }
 
-function invite_blur() {
-	document.getElementById("copied").classList.remove("copied");
+function copy_blur(elem) {
+	elem.classList.remove("copied");
 }

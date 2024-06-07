@@ -7,7 +7,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use either::Either;
+use either::Either::{self, Left};
 use rocket::http::Status;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
@@ -144,9 +144,26 @@ impl User {
 			discord_id,
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
-			referred_by,
+			referred_by: referred_by.clone(),
 			..Default::default()
 		};
+
+		if let Some(referred_by) = referred_by {
+			let mut referred_by_user =
+				User::db_by_id(referred_by.id()).await?.ok_or_else(|| {
+					Error::new(
+						Status::InternalServerError,
+						"Referrer not found",
+						Some(&format!("Referrer not found: {}", referred_by.id())),
+					)
+				})?;
+
+			referred_by_user.referred_users.push(user.uuid());
+
+			referred_by_user
+				.db_update_field("referred_users", &referred_by_user.referred_users)
+				.await?;
+		}
 
 		user.db_create().await?;
 
@@ -255,14 +272,19 @@ impl User {
 		let mut referrals = vec![];
 
 		for referral in &self.referral_registrations {
-			if let Ok(Some(registration)) = Registration::db_by_id(referral.id()).await {
-				referrals.push(registration);
+			if let Some(registration) = Registration::db_by_id(referral.id()).await? {
+				if let Left(referred_by) = &registration.referrer_or_discord {
+					if referred_by == &self.id {
+						referrals.push(registration);
+					}
+				}
 			}
 		}
 
-		let referral_ids = referrals.iter().map(|r| r.uuid()).collect::<Vec<_>>();
+		if referrals.len() != self.referral_registrations.len() {
+			let referral_ids: Vec<UUID<Registration>> =
+				referrals.iter().map(|r| r.uuid()).collect();
 
-		if referral_ids.len() != self.referral_registrations.len() {
 			self.db_update_field("referral_registrations", &referral_ids)
 				.await?;
 		}

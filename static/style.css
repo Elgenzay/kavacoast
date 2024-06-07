@@ -19,7 +19,7 @@
 	opacity: 1;
 }
 
-#copied {
+.copytooltip {
 	opacity: 0;
 	transition: opacity 0.3s;
 }

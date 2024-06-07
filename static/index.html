@@ -53,10 +53,11 @@
 				<div id="direct-invite-container">
 					<div id="invite">
 						<input readonly type="text" id="direct_invite_link" value="https://kavacoast.com/join"
-							onblur="invite_blur()">
-						<img onclick="copy()" id="copy_button" src="resources/i/copy.png">
+							onblur="copy_blur(document.getElementById('copytooltip'))">
+						<img onclick="copy(document.getElementById('direct_invite_link'), document.getElementById('copytooltip'))"
+							id="copy_button" src="resources/i/copy.png">
 					</div>
-					<div id="copied">
+					<div class="copytooltip" id="copytooltip">
 						Copied!
 					</div>
 				</div>

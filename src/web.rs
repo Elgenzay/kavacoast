@@ -60,6 +60,7 @@ pub async fn start_web() {
 				routes::users::delete_user,
 				routes::users::create_referral,
 				routes::users::delete_referral,
+				routes::users::get_referrals,
 				routes::pool_player::create_pool_player,
 				routes::pool_player::get_pool_players,
 				routes::pool_player::get_pool_player,

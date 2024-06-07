@@ -7,25 +7,28 @@ class Settings {
             this.update_username_button = document.getElementById("settings-change-username-button");
             this.update_displayname_button = document.getElementById("settings-change-displayname-button");
             this.update_password_button = document.getElementById("settings-change-password-button");
+            this.create_referral_button = document.getElementById("settings-create-referral-button");
 
             this.update_username_error = document.getElementById("settings-change-username-error");
             this.update_displayname_error = document.getElementById("settings-change-displayname-error");
             this.update_password_error = document.getElementById("settings-change-password-error");
+            this.referral_error = document.getElementById("referral-error");
+            this.referrals_container = document.getElementById("referral-list-container");
+
+            this.referral_revoke_buttons = {};
 
             document.getElementById("settings-change-displayname-input").value = data.display_name;
             document.getElementById("settings-change-username-input").value = data.username;
 
             for (let elem of document.getElementsByClassName("discord-username")) {
-                elem.innerText = data.discord_username;
+                if (data.discord_username) {
+                    elem.innerText = data.discord_username;
+                } else {
+                    elem.innerText = "N/A";
+                }
             }
 
-            let referrals_container = document.getElementById("referral-list-container");
-
-            for (let referral of data.referrals) {
-                let referral_elem = this.referral_element(referral);
-                referrals_container.appendChild(referral_elem);
-            }
-
+            this.update_referral_list(data.referrals);
         });
     }
 
@@ -41,11 +44,16 @@ class Settings {
         let img = document.createElement("img");
         img.src = "/resources/i/copy.png";
         img.className = "copy-button";
+        img.setAttribute("onclick", "copy(this.previousElementSibling)");
+
         referral_elem.appendChild(img);
 
         let button = document.createElement("button");
         button.innerText = "Revoke";
+        button.onclick = () => this.revoke_referral(registration_key);
         referral_elem.appendChild(button);
+
+        this.referral_revoke_buttons[registration_key] = button;
 
         return referral_elem;
     }
@@ -102,6 +110,8 @@ class Settings {
             "old_password": this.current_password,
             "new_password": this.new_password
         }, "POST").then(r => {
+            this.update_password_button.disabled = false;
+
             try {
                 let response = JSON.parse(r);
                 if (response.success) {
@@ -109,11 +119,9 @@ class Settings {
                 }
             } catch (e) {
                 Dashboard.display_error(e, this.update_password_error);
-                this.update_password_button.disabled = false;
             }
         }).catch(e => {
             Dashboard.display_error(e, this.update_password_error);
-            this.update_password_button.disabled = false;
         });
     }
 
@@ -123,6 +131,8 @@ class Settings {
         Auth.request("/api/users/me", {
             "username": this.new_username
         }, "PATCH").then(r => {
+            this.update_username_button.disabled = false;
+
             try {
                 let response = JSON.parse(r);
                 if (response.success) {
@@ -130,11 +140,9 @@ class Settings {
                 }
             } catch (e) {
                 Dashboard.display_error(e, this.update_username_error);
-                this.update_username_button.disabled = false;
             }
         }).catch(e => {
             Dashboard.display_error(e, this.update_username_error);
-            this.update_username_button.disabled = false;
         });
     }
 
@@ -144,6 +152,8 @@ class Settings {
         Auth.request("/api/users/me", {
             "display_name": this.new_displayname
         }, "PATCH").then(r => {
+            this.update_displayname_button.disabled = false;
+
             try {
                 let response = JSON.parse(r);
                 if (response.success) {
@@ -151,15 +161,74 @@ class Settings {
                 }
             } catch (e) {
                 Dashboard.display_error(e, this.update_displayname_error);
-                this.update_displayname_button.disabled = false;
             }
         }).catch(e => {
             Dashboard.display_error(e, this.update_displayname_error);
-            this.update_displayname_button.disabled = false;
         });
     }
 
     create_referral() {
-        console.log("todo");
+        this.create_referral_button.disabled = true;
+
+        Auth.request("/api/users/me/referrals", {}, "POST").then(r => {
+            this.create_referral_button.disabled = false;
+
+            try {
+                let response = JSON.parse(r);
+
+                if (response.key) {
+                    this.refresh_referrals();
+                } else {
+                    throw new Error("Unexpected response from server.");
+                }
+
+            } catch (e) {
+                Dashboard.display_error(e, this.update_displayname_error);
+            }
+        }).catch(e => {
+            Dashboard.display_error(e, this.referral_error);
+        });
     }
+
+    revoke_referral(registration_key) {
+        this.referral_revoke_buttons[registration_key].disabled = true;
+
+        Auth.request("/api/users/me/referrals", { "key": registration_key }, "DELETE").then(r => {
+            this.referral_revoke_buttons[registration_key].disabled = false;
+
+            try {
+                let response = JSON.parse(r);
+
+                if (response.success) {
+                    this.refresh_referrals();
+                } else {
+                    throw new Error("Unexpected response from server.");
+                }
+
+            } catch (e) {
+                Dashboard.display_error(e, this.update_displayname_error);
+            }
+        }).catch(e => {
+            Dashboard.display_error(e, this.referral_error);
+        });
+    }
+
+    refresh_referrals() {
+        Auth.request("/api/users/me/referrals").then(r => {
+            let response = JSON.parse(r);
+            this.update_referral_list(response);
+        }).catch(e => {
+            console.error(e);
+        });
+    }
+
+    update_referral_list(ref_urls) {
+        this.referrals_container.innerHTML = "";
+
+        for (let ref_url of ref_urls) {
+            let referral_elem = this.referral_element(ref_url);
+            this.referrals_container.appendChild(referral_elem);
+        }
+    }
+
 }
