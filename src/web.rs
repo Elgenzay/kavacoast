@@ -65,6 +65,11 @@ pub async fn start_web() {
 				routes::pool_player::get_pool_players,
 				routes::pool_player::get_pool_player,
 				routes::pool_player::update_pool_player,
+				routes::pool_game::create_pool_game,
+				routes::pool_game::update_pool_game,
+				routes::pool_game::get_pool_game,
+				routes::pool_game::get_pool_games,
+				routes::pool_game::delete_pool_game,
 			],
 		)
 		.attach(Shield::default().enable(Hsts::IncludeSubDomains(Duration::new(31536000, 0))))
