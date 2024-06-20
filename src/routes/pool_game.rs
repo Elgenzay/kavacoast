@@ -1,7 +1,7 @@
 use crate::{
 	dbrecord::DBRecord,
 	error::{Error, ErrorResponse},
-	generic::{BearerToken, GenericOkResponse},
+	generic::{BearerToken, GenericOkResponse, UUID},
 	models::{
 		pool_game::{PoolGame, PoolGameType, PoolGameWinner},
 		pool_player::PoolPlayer,
@@ -19,10 +19,10 @@ use surrealdb::sql::Id;
 #[derive(Deserialize)]
 pub struct UpdatePoolGameRequest {
 	date: Option<String>,
-	player1: Option<String>,
-	player2: Option<String>,
+	player1: Option<UUID<PoolPlayer>>,
+	player2: Option<UUID<PoolPlayer>>,
 	winner: Option<PoolGameWinner>,
-	host: Option<String>,
+	host: Option<UUID<User>>,
 	game_type: Option<PoolGameType>,
 }
 
@@ -39,12 +39,12 @@ pub async fn create_pool_game(
 		_ => return Err(Error::new(Status::BadRequest, "Missing required field(s)", None).into()),
 	};
 
-	let player1 = match PoolPlayer::db_by_id(Id::from(player1)).await? {
+	let player1 = match PoolPlayer::db_by_id(player1.id()).await? {
 		Some(player) => player,
 		None => return Err(Error::new(Status::NotFound, "Player 1 not found", None).into()),
 	};
 
-	let player2 = match PoolPlayer::db_by_id(Id::from(player2)).await? {
+	let player2 = match PoolPlayer::db_by_id(player2.id()).await? {
 		Some(player) => player,
 		None => return Err(Error::new(Status::NotFound, "Player 2 not found", None).into()),
 	};
@@ -77,7 +77,7 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(player) = &request.player1 {
-		if let Some(player) = PoolPlayer::db_by_id(Id::from(player)).await? {
+		if let Some(player) = PoolPlayer::db_by_id(player.id()).await? {
 			updates.push(("player1", json!(player.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Player 1 not found", None).into());
@@ -85,7 +85,7 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(player) = &request.player2 {
-		if let Some(player) = PoolPlayer::db_by_id(Id::from(player)).await? {
+		if let Some(player) = PoolPlayer::db_by_id(player.id()).await? {
 			updates.push(("player2", json!(player.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Player 2 not found", None).into());
@@ -101,20 +101,14 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(host) = &request.host {
-		if let Some(host) = User::db_by_id(Id::from(host)).await? {
+		if let Some(host) = User::db_by_id(host.id()).await? {
 			updates.push(("host", json!(host.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Host user not found", None).into());
 		}
 	}
 
-	// Convert the Vec<(&str, serde_json::Value)> to Vec<(&str, &serde_json::Value)>
-	let updates_borrowed = updates
-		.iter()
-		.map(|(field, value)| (*field, value))
-		.collect();
-
-	game.db_update_fields(updates_borrowed).await?;
+	game.db_update_fields(updates).await?;
 
 	Ok(Json(GenericOkResponse::new()))
 }

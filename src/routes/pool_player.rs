@@ -1,7 +1,7 @@
 use crate::{
 	dbrecord::DBRecord,
 	error::{Error, ErrorResponse},
-	generic::{BearerToken, GenericOkResponse},
+	generic::{BearerToken, GenericOkResponse, UUID},
 	models::{
 		pool_player::PoolPlayer,
 		session::Session,
@@ -11,6 +11,7 @@ use crate::{
 use core::str;
 use rocket::{http::Status, response::status, serde::json::Json};
 use serde::Deserialize;
+use serde_json::json;
 use surrealdb::sql::Id;
 
 pub async fn require_pool_host(session: &Session) -> Result<(), Error> {
@@ -24,7 +25,7 @@ pub async fn require_pool_host(session: &Session) -> Result<(), Error> {
 #[derive(Deserialize)]
 pub struct UpdatePoolPlayerRequest {
 	pub descriptor: Option<String>,
-	pub user: Option<String>,
+	pub user: Option<UUID<User>>,
 }
 
 #[rocket::post("/api/pool_players", format = "json", data = "<request>")]
@@ -41,7 +42,7 @@ pub async fn create_pool_player(
 	}
 
 	if let Some(user) = &request.user {
-		let user = User::db_by_id(Id::from(user)).await?;
+		let user = User::db_by_id(user.id()).await?;
 
 		if let Some(user) = user {
 			player = player.with_user(user.uuid());
@@ -63,22 +64,25 @@ pub async fn update_pool_player(
 	let session = bearer_token.validate().await?;
 	require_pool_host(&session).await?;
 
+	let mut updates = vec![];
+
 	let player = PoolPlayer::db_by_id(Id::from(&id))
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Pool player not found", None))?;
 
 	if let Some(descriptor) = &request.descriptor {
-		player.db_update_field("descriptor", descriptor).await?;
+		updates.push(("descriptor", json!(descriptor)));
 	}
 
 	if let Some(user) = &request.user {
-		if let Some(user) = User::db_by_id(Id::from(user)).await? {
-			player.db_update_field("user", &user.uuid()).await?;
+		if let Some(user) = User::db_by_id(user.id()).await? {
+			updates.push(("user", json!(user.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "User not found", None).into());
 		}
 	}
 
+	player.db_update_fields(updates).await?;
 	Ok(Json(GenericOkResponse::new()))
 }
 

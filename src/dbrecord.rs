@@ -157,9 +157,9 @@ pub trait DBRecord: Any + Serialize + DeserializeOwned + Send + Sync {
 	/// Update several fields of a record in the database at once.
 	///
 	/// The first value of the tuple is the field name, and the second is the value to set.
-	async fn db_update_fields<T: Serialize + Sync>(
+	async fn db_update_fields<T: Serialize + Sync + Send>(
 		&self,
-		updates: Vec<(&str, &T)>,
+		updates: Vec<(&str, T)>,
 	) -> Result<(), Error> {
 		let mut merge_data = HashMap::new();
 		merge_data.insert("updated_at", serde_json::to_value(Utc::now())?);

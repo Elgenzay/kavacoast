@@ -124,13 +124,13 @@ impl EnvVarKey {
 #[allow(clippy::upper_case_acronyms)]
 pub struct UUID<T>(Thing, PhantomData<T>);
 
-impl<T> Clone for UUID<T> {
+impl<T: DBRecord> Clone for UUID<T> {
 	fn clone(&self) -> Self {
 		Self(self.0.to_owned(), PhantomData)
 	}
 }
 
-impl<T> From<Thing> for UUID<T> {
+impl<T: DBRecord> From<Thing> for UUID<T> {
 	fn from(thing: Thing) -> Self {
 		UUID(thing, PhantomData)
 	}
@@ -184,7 +184,7 @@ where
 	}
 }
 
-impl<T> Default for UUID<T> {
+impl<T: DBRecord> Default for UUID<T> {
 	fn default() -> Self {
 		Thing {
 			tb: String::new(),
@@ -194,16 +194,33 @@ impl<T> Default for UUID<T> {
 	}
 }
 
-impl<'de, T> Deserialize<'de> for UUID<T> {
+impl<'de, T: DBRecord> Deserialize<'de> for UUID<T> {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
 		D: Deserializer<'de>,
 	{
-		Ok(UUID(Thing::deserialize(deserializer)?, PhantomData))
+		let value = serde_json::Value::deserialize(deserializer)?;
+
+		match Thing::deserialize(&value) {
+			Ok(thing) => Ok(UUID(thing, PhantomData)),
+			Err(_) => {
+				let id = match surrealdb::sql::Id::deserialize(value) {
+					Ok(id) => id,
+					Err(e) => return Err(serde::de::Error::custom(e)),
+				};
+
+				let thing = Thing {
+					tb: T::table().to_owned(),
+					id,
+				};
+
+				Ok(UUID(thing, PhantomData))
+			}
+		}
 	}
 }
 
-impl<T> Serialize for UUID<T> {
+impl<T: DBRecord> Serialize for UUID<T> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
@@ -212,7 +229,7 @@ impl<T> Serialize for UUID<T> {
 	}
 }
 
-impl<T> PartialEq for UUID<T> {
+impl<T: DBRecord> PartialEq for UUID<T> {
 	fn eq(&self, other: &Self) -> bool {
 		self.0 == other.0
 	}

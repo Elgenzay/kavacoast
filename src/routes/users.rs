@@ -16,6 +16,7 @@ use rocket::{
 	response::status,
 	serde::{json::Json, Deserialize, Serialize},
 };
+use serde_json::json;
 use surrealdb::sql::Id;
 
 #[derive(Deserialize)]
@@ -107,22 +108,28 @@ pub async fn update_user(
 	let session = bearer_token.validate().await?;
 	let is_admin_request = session.user().await?.has_role(&Role::Admin);
 	let mut user = get_user(id, session).await?;
+	let mut updates = vec![];
 
 	if let Some(username) = &request.username {
 		let username = User::validate_username_requirements(username)?;
-		user.db_update_field("username", &username).await?;
+		updates.push(("username", json!(username)));
 	}
 
 	if let Some(display_name) = &request.display_name {
 		let display_name = User::validate_displayname_requirements(display_name)?;
-		user.db_update_field("display_name", &display_name).await?;
+		updates.push(("display_name", json!(display_name)));
 	}
 
-	if is_admin_request {
-		if let Some(password) = &request.password {
+	if let Some(password) = &request.password {
+		if is_admin_request {
 			user.set_password(password).await?;
+		} else {
+			// Users change their own password with the change_password endpoint
+			return Err(Error::insufficient_permissions().into());
 		}
 	}
+
+	user.db_update_fields(updates).await?;
 
 	Ok(Json(GenericOkResponse::new()))
 }
