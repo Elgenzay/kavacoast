@@ -17,7 +17,6 @@ use rocket::{
 	serde::{json::Json, Deserialize, Serialize},
 };
 use serde_json::json;
-use surrealdb::sql::Id;
 
 #[derive(Deserialize)]
 pub struct RegistrationRequest {
@@ -49,11 +48,11 @@ async fn get_user(id: &str, session: Session) -> Result<User, Error> {
 	if id == "me" {
 		session.user().await
 	} else {
-		match User::db_by_id(Id::from(id)).await? {
+		match User::db_by_id(id).await? {
 			Some(target_user) => {
 				let session_user = session.user().await?;
 
-				if target_user.id != session_user.uuid() && !session_user.has_role(&Role::Admin) {
+				if target_user.uuid != session_user.uuid() && !session_user.has_role(&Role::Admin) {
 					return Err(Error::insufficient_permissions());
 				}
 
@@ -213,12 +212,12 @@ pub async fn delete_referral(
 	let session = bearer_token.validate().await?;
 	let user = get_user(id, session).await?;
 
-	let registration = Registration::db_search_one("registration_key", &request.key)
+	let registration = Registration::db_search_one("registration_key", request.key.clone())
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Referral not found", None))?;
 
 	if let Either::Left(referred_by) = &registration.referrer_or_discord {
-		if referred_by == &user.id {
+		if referred_by == &user.uuid {
 			registration.db_delete().await?;
 
 			let new_referrals: Vec<UUID<Registration>> = user

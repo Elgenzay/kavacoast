@@ -10,7 +10,7 @@ const RANDOM_PASSWORD_LENGTH: usize = 32;
 pub async fn run(ctx: &Context, discord_user: &User) -> String {
 	let user_id = discord_user.id.get().to_string();
 
-	match crate::models::user::User::db_search_one("discord_id", &user_id).await {
+	match crate::models::user::User::db_search_one("discord_id", user_id.clone()).await {
 		Ok(user) => {
 			if let Some(mut user) = user {
 				let new_password =

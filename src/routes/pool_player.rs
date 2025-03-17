@@ -12,7 +12,6 @@ use core::str;
 use rocket::{http::Status, response::status, serde::json::Json};
 use serde::Deserialize;
 use serde_json::json;
-use surrealdb::sql::Id;
 
 pub async fn require_pool_host(session: &Session) -> Result<(), Error> {
 	if !session.user().await?.has_role(&Role::PoolHost) {
@@ -42,7 +41,7 @@ pub async fn create_pool_player(
 	}
 
 	if let Some(user) = &request.user {
-		let user = User::db_by_id(user.id()).await?;
+		let user = User::db_by_id(&user.uuid_string()).await?;
 
 		if let Some(user) = user {
 			player = player.with_user(user.uuid());
@@ -66,7 +65,7 @@ pub async fn update_pool_player(
 
 	let mut updates = vec![];
 
-	let player = PoolPlayer::db_by_id(Id::from(&id))
+	let player = PoolPlayer::db_by_id(&id)
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Pool player not found", None))?;
 
@@ -75,7 +74,7 @@ pub async fn update_pool_player(
 	}
 
 	if let Some(user) = &request.user {
-		if let Some(user) = User::db_by_id(user.id()).await? {
+		if let Some(user) = User::db_by_id(&user.uuid_string()).await? {
 			updates.push(("user", json!(user.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "User not found", None).into());
@@ -104,7 +103,7 @@ pub async fn get_pool_player(
 	let user = session.user().await?;
 
 	if id == "me" {
-		return if let Some(player) = PoolPlayer::db_search_one("user", &user.uuid()).await? {
+		return if let Some(player) = PoolPlayer::db_search_one("user", user.uuid().clone()).await? {
 			Ok(Json(player))
 		} else {
 			Err(Error::new(Status::NotFound, "Pool player not found", None).into())
@@ -113,7 +112,7 @@ pub async fn get_pool_player(
 
 	require_pool_host(&session).await?;
 
-	if let Some(player) = PoolPlayer::db_by_id(Id::from(id)).await? {
+	if let Some(player) = PoolPlayer::db_by_id(&id).await? {
 		Ok(Json(player))
 	} else {
 		Err(Error::new(Status::NotFound, "Pool player not found", None).into())

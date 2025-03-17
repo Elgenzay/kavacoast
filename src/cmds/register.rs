@@ -8,7 +8,7 @@ use serenity::{
 pub async fn run(ctx: &Context, user: &User) -> String {
 	let user_id = user.id.get().to_string();
 
-	match crate::models::user::User::db_search_one("discord_id", &user_id).await {
+	match crate::models::user::User::db_search_one("discord_id", user_id.clone()).await {
 		Ok(user) => {
 			if user.is_some() {
 				return "You're already registered. Use `/resetpassword` if you've lost your credentials.".to_owned();
@@ -20,7 +20,7 @@ pub async fn run(ctx: &Context, user: &User) -> String {
 		}
 	}
 
-	match Registration::db_search_one("discord_id", &user_id).await {
+	match Registration::db_search_one("discord_id", user_id.clone()).await {
 		Ok(Some(existing)) => return existing.dm_string(),
 		Err(e) => {
 			log::error!("Registration search error on registration: {}", e);

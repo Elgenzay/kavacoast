@@ -44,7 +44,7 @@ pub async fn token_json(
 pub async fn token(
 	token_request: TokenRequest,
 ) -> Result<Json<TokenResponse>, status::Custom<Json<ErrorResponse>>> {
-	let user = User::db_search_one("username", &token_request.username)
+	let user = User::db_search_one("username", token_request.username.clone())
 		.await?
 		.ok_or(Error::generic_401())?;
 

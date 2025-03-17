@@ -19,7 +19,7 @@ pub struct CheckRegistrationKeyRequest {
 pub async fn check_registration_key(
 	request: Json<CheckRegistrationKeyRequest>,
 ) -> Result<Json<GenericOkResponse>, status::Custom<Json<ErrorResponse>>> {
-	Registration::db_search_one("registration_key", &request.registration_key)
+	Registration::db_search_one("registration_key", request.registration_key.clone())
 		.await?
 		.ok_or_else(|| Error::new(Status::Unauthorized, "Invalid registration key", None))?;
 

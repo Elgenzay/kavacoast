@@ -18,7 +18,7 @@ const PASSWORD_MIN_LENGTH: usize = 8;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
-	pub id: UUID<User>,
+	pub uuid: UUID<User>,
 	pub username: String,
 	pub display_name: String,
 	pub password_hash: HashedString,
@@ -34,7 +34,7 @@ pub struct User {
 impl Default for User {
 	fn default() -> Self {
 		Self {
-			id: UUID::new(),
+			uuid: UUID::new(),
 			username: "".to_owned(),
 			display_name: "".to_owned(),
 			password_hash: Default::default(),
@@ -69,12 +69,12 @@ impl DBRecord for User {
 	}
 
 	fn uuid(&self) -> UUID<Self> {
-		self.id.to_owned()
+		self.uuid.to_owned()
 	}
 
 	async fn delete_hook(&self) -> Result<(), Error> {
 		for registration_uuid in self.referral_registrations.iter() {
-			let registration = Registration::db_by_id(registration_uuid.id()).await?;
+			let registration = Registration::db_by_id(&registration_uuid.uuid_string()).await?;
 
 			if let Some(registration) = registration {
 				registration.db_delete().await?;
@@ -98,7 +98,10 @@ impl User {
 	pub async fn register(registration_request: &RegistrationRequest) -> Result<Self, Error> {
 		let username = Self::validate_username_requirements(&registration_request.username)?;
 
-		if User::db_search_one("username", &username).await?.is_some() {
+		if User::db_search_one("username", username.clone())
+			.await?
+			.is_some()
+		{
 			return Err(Error::new(
 				Status::BadRequest,
 				"Username unavailable.",
@@ -106,12 +109,12 @@ impl User {
 			));
 		};
 
-		let registration =
-			Registration::db_search_one("registration_key", &registration_request.registration_key)
-				.await?
-				.ok_or_else(|| {
-					Error::new(Status::Unauthorized, "Invalid registration key", None)
-				})?;
+		let registration = Registration::db_search_one(
+			"registration_key",
+			registration_request.registration_key.clone(),
+		)
+		.await?
+		.ok_or_else(|| Error::new(Status::Unauthorized, "Invalid registration key", None))?;
 
 		registration.db_delete().await?;
 
@@ -119,7 +122,7 @@ impl User {
 
 		let (referred_by, discord_id) = match registration.referrer_or_discord {
 			Either::Right(discord_id) => {
-				if User::db_search_one("discord_id", &discord_id)
+				if User::db_search_one("discord_id", discord_id.clone())
 					.await?
 					.is_some()
 				{
@@ -135,7 +138,7 @@ impl User {
 		};
 
 		let user = Self {
-			id: UUID::new(),
+			uuid: UUID::new(),
 			username,
 			display_name: Self::validate_displayname_requirements(
 				&registration_request.display_name,
@@ -149,12 +152,16 @@ impl User {
 		};
 
 		if let Some(referred_by) = referred_by {
-			let mut referred_by_user =
-				User::db_by_id(referred_by.id()).await?.ok_or_else(|| {
+			let mut referred_by_user = User::db_by_id(&referred_by.uuid_string())
+				.await?
+				.ok_or_else(|| {
 					Error::new(
 						Status::InternalServerError,
 						"Referrer not found",
-						Some(&format!("Referrer not found: {}", referred_by.id())),
+						Some(&format!(
+							"Referrer not found: {}",
+							referred_by.uuid_string()
+						)),
 					)
 				})?;
 
@@ -186,7 +193,7 @@ impl User {
 		&self,
 		refresh_token: &str,
 	) -> Result<Option<Session>, Error> {
-		let sessions: Vec<Session> = Session::db_search("user", &self.id).await?;
+		let sessions: Vec<Session> = Session::db_search("user", self.uuid.clone()).await?;
 
 		for session in sessions {
 			if session.refresh_token_hash.verify(refresh_token)? {
@@ -272,9 +279,9 @@ impl User {
 		let mut referrals = vec![];
 
 		for referral in &self.referral_registrations {
-			if let Some(registration) = Registration::db_by_id(referral.id()).await? {
+			if let Some(registration) = Registration::db_by_id(&referral.uuid_string()).await? {
 				if let Left(referred_by) = &registration.referrer_or_discord {
-					if referred_by == &self.id {
+					if referred_by == &self.uuid {
 						referrals.push(registration);
 					}
 				}

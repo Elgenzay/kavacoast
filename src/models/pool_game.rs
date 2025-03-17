@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct PoolGame {
-	pub id: UUID<PoolGame>,
+	pub uuid: UUID<PoolGame>,
 	date: NaiveDate,
 	player1: UUID<PoolPlayer>,
 	player2: UUID<PoolPlayer>,
@@ -42,14 +42,14 @@ impl DBRecord for PoolGame {
 	}
 
 	fn uuid(&self) -> UUID<Self> {
-		self.id.to_owned()
+		self.uuid.to_owned()
 	}
 }
 
 impl PoolGame {
 	pub fn new(player1: UUID<PoolPlayer>, player2: UUID<PoolPlayer>, host: UUID<User>) -> Self {
 		Self {
-			id: UUID::default(),
+			uuid: UUID::default(),
 			date: Utc::now().date_naive(),
 			player1,
 			player2,

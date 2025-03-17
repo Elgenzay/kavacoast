@@ -14,7 +14,6 @@ use core::str;
 use rocket::{http::Status, response::status, serde::json::Json};
 use serde::Deserialize;
 use serde_json::json;
-use surrealdb::sql::Id;
 
 #[derive(Deserialize)]
 pub struct UpdatePoolGameRequest {
@@ -39,12 +38,12 @@ pub async fn create_pool_game(
 		_ => return Err(Error::new(Status::BadRequest, "Missing required field(s)", None).into()),
 	};
 
-	let player1 = match PoolPlayer::db_by_id(player1.id()).await? {
+	let player1 = match PoolPlayer::db_by_id(&player1.uuid_string()).await? {
 		Some(player) => player,
 		None => return Err(Error::new(Status::NotFound, "Player 1 not found", None).into()),
 	};
 
-	let player2 = match PoolPlayer::db_by_id(player2.id()).await? {
+	let player2 = match PoolPlayer::db_by_id(&player2.uuid_string()).await? {
 		Some(player) => player,
 		None => return Err(Error::new(Status::NotFound, "Player 2 not found", None).into()),
 	};
@@ -65,7 +64,7 @@ pub async fn update_pool_game(
 
 	let mut updates = vec![];
 
-	let game = PoolGame::db_by_id(Id::from(&id))
+	let game = PoolGame::db_by_id(&id)
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Pool game not found", None))?;
 
@@ -77,7 +76,7 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(player) = &request.player1 {
-		if let Some(player) = PoolPlayer::db_by_id(player.id()).await? {
+		if let Some(player) = PoolPlayer::db_by_id(&player.uuid_string()).await? {
 			updates.push(("player1", json!(player.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Player 1 not found", None).into());
@@ -85,7 +84,7 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(player) = &request.player2 {
-		if let Some(player) = PoolPlayer::db_by_id(player.id()).await? {
+		if let Some(player) = PoolPlayer::db_by_id(&player.uuid_string()).await? {
 			updates.push(("player2", json!(player.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Player 2 not found", None).into());
@@ -101,7 +100,7 @@ pub async fn update_pool_game(
 	}
 
 	if let Some(host) = &request.host {
-		if let Some(host) = User::db_by_id(host.id()).await? {
+		if let Some(host) = User::db_by_id(&host.uuid_string()).await? {
 			updates.push(("host", json!(host.uuid())));
 		} else {
 			return Err(Error::new(Status::NotFound, "Host user not found", None).into());
@@ -121,7 +120,7 @@ pub async fn get_pool_game(
 	let session = bearer_token.validate().await?;
 	require_pool_host(&session).await?;
 
-	let game = PoolGame::db_by_id(Id::from(&id))
+	let game = PoolGame::db_by_id(&id)
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Pool game not found", None))?;
 
@@ -145,7 +144,7 @@ pub async fn delete_pool_game(
 	let session = bearer_token.validate().await?;
 	require_pool_host(&session).await?;
 
-	let game = PoolGame::db_by_id(Id::from(&id))
+	let game = PoolGame::db_by_id(&id)
 		.await?
 		.ok_or_else(|| Error::new(Status::NotFound, "Pool game not found", None))?;
 

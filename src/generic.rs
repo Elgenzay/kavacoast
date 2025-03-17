@@ -9,7 +9,8 @@ use chrono::{DateTime, Duration, Utc};
 use password_hash::{
 	rand_core::OsRng, PasswordHashString, PasswordHasher, PasswordVerifier, SaltString,
 };
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::Rng;
 use rocket::{
 	http::{HeaderMap, Status},
 	request::{FromRequest, Outcome},
@@ -122,6 +123,7 @@ impl EnvVarKey {
 
 /// A typed wrapper for the `Thing` object that corresponds to an ID in Surreal.
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Debug)]
 pub struct UUID<T>(Thing, PhantomData<T>);
 
 impl<T: DBRecord> Clone for UUID<T> {
@@ -145,18 +147,18 @@ where
 		self.0.to_owned()
 	}
 
-	/// Get the ID (`surrealdb::sql::id::Id`) from the UUID.
-	pub fn id(&self) -> Id {
-		self.0.id.to_owned()
+	/// Get the UUID as a string.
+	pub fn uuid_string(&self) -> String {
+		match &self.0.id {
+			Id::Uuid(uuid) => uuid.0.to_string(),
+			Id::String(s) => s.to_owned(),
+			_ => panic!("Invalid UUID type"),
+		}
 	}
 
 	/// Create a new UUID with a random ID for the given table.
 	pub fn new() -> Self {
-		Thing {
-			tb: T::table().to_owned(),
-			id: Id::from(Uuid::new_v4()),
-		}
-		.into()
+		Thing::from((T::table().to_owned(), Id::from(Uuid::new_v4()))).into()
 	}
 
 	/// Get the object associated with the UUID.
@@ -179,44 +181,14 @@ where
 	where
 		T: DBRecord,
 	{
-		let obj: Option<T> = T::db_by_id(self.id()).await?;
+		let obj: Option<T> = T::db_by_id(&self.uuid_string()).await?;
 		Ok(obj)
 	}
 }
 
 impl<T: DBRecord> Default for UUID<T> {
 	fn default() -> Self {
-		Thing {
-			tb: String::new(),
-			id: Id::from(String::new()),
-		}
-		.into()
-	}
-}
-
-impl<'de, T: DBRecord> Deserialize<'de> for UUID<T> {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		let value = serde_json::Value::deserialize(deserializer)?;
-
-		match Thing::deserialize(&value) {
-			Ok(thing) => Ok(UUID(thing, PhantomData)),
-			Err(_) => {
-				let id = match surrealdb::sql::Id::deserialize(value) {
-					Ok(id) => id,
-					Err(e) => return Err(serde::de::Error::custom(e)),
-				};
-
-				let thing = Thing {
-					tb: T::table().to_owned(),
-					id,
-				};
-
-				Ok(UUID(thing, PhantomData))
-			}
-		}
+		Thing::from((String::new(), Id::from(String::new()))).into()
 	}
 }
 
@@ -225,7 +197,38 @@ impl<T: DBRecord> Serialize for UUID<T> {
 	where
 		S: Serializer,
 	{
-		self.0.serialize(serializer)
+		let s = format!("{}:{}", self.0.tb, self.uuid_string());
+		serializer.serialize_str(&s)
+	}
+}
+
+impl<'de, T: DBRecord> Deserialize<'de> for UUID<T> {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		struct UUIDVisitor<T>(PhantomData<T>);
+
+		impl<T> serde::de::Visitor<'_> for UUIDVisitor<T> {
+			type Value = UUID<T>;
+
+			fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+				formatter.write_str("a string in the format `table:uuid`")
+			}
+
+			fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				let parts: Vec<&str> = value.splitn(2, ':').collect();
+				if parts.len() != 2 {
+					return Err(E::custom("expected a string in the format `table:uuid`"));
+				}
+				Ok(UUID(Thing::from((parts[0], parts[1])), PhantomData))
+			}
+		}
+
+		deserializer.deserialize_string(UUIDVisitor(PhantomData))
 	}
 }
 
@@ -303,9 +306,9 @@ pub trait Expirable: DBRecord {
 
 		Self::db_query(
 			SQLCommand::Delete,
-			&format!("time::unix(type::datetime({}))", Self::start_time_field()),
+			format!("time::unix(type::datetime({}))", Self::start_time_field()),
 			'<',
-			&earliest_valid_time.timestamp(),
+			earliest_valid_time.timestamp(),
 		)
 		.await?;
 
@@ -386,7 +389,7 @@ pub struct JwtClaims {
 }
 
 pub fn random_alphanumeric_string(length: usize) -> String {
-	thread_rng()
+	rand::rng()
 		.sample_iter(&Alphanumeric)
 		.take(length)
 		.map(char::from)

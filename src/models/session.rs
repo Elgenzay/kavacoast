@@ -7,14 +7,14 @@ use crate::{
 use chrono::{DateTime, Utc};
 use rocket::http::Status;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::{Id, Uuid};
+use surrealdb::sql::Uuid;
 
 pub const ACCESS_TOKEN_EXPIRY_SECONDS: u64 = 60 * 60; // 1 hour
 pub const REFRESH_TOKEN_EXPIRY_SECONDS: u64 = 60 * 60 * 24 * 30; // 30 days
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
-	pub id: UUID<Session>,
+	pub uuid: UUID<Session>,
 	created_at: DateTime<Utc>,
 	updated_at: DateTime<Utc>,
 	user: UUID<User>,
@@ -28,7 +28,7 @@ impl DBRecord for Session {
 	}
 
 	fn uuid(&self) -> UUID<Self> {
-		self.id.to_owned()
+		self.uuid.to_owned()
 	}
 }
 
@@ -36,7 +36,7 @@ impl Session {
 	/// Create a new Session, without persisting it to the database.
 	pub fn new(user: &UUID<User>) -> Result<Self, Error> {
 		Ok(Self {
-			id: UUID::new(),
+			uuid: UUID::new(),
 			created_at: Utc::now(),
 			updated_at: Utc::now(),
 			user: user.to_owned(),
@@ -60,7 +60,7 @@ impl Session {
 				.map_err(|_| Error::generic_401())?;
 		// note: decode() also checks expiration
 
-		let session: Session = Self::db_by_id(Id::from(token_data.claims.sub))
+		let session: Session = Self::db_by_id(&token_data.claims.sub)
 			.await?
 			.ok_or(Error::generic_401())?;
 
@@ -98,7 +98,7 @@ impl Session {
 		let env = Environment::new();
 
 		let claims = JwtClaims {
-			sub: self.id.id().to_raw(),
+			sub: self.uuid.uuid_string(),
 			exp: now + ACCESS_TOKEN_EXPIRY_SECONDS,
 			iat: now,
 			iss: "kavacoast.com".to_owned(),

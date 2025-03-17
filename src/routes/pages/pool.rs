@@ -19,7 +19,7 @@ pub async fn pool(
 	let session = bearer_token.validate().await?;
 	let user = session.user().await?;
 
-	let player = PoolPlayer::db_search_one("user", &user.id)
+	let player = PoolPlayer::db_search_one("user", user.uuid.clone())
 		.await?
 		.ok_or_else(Error::forbidden)?;
 

@@ -24,6 +24,8 @@ pub async fn dashboard(
 	Ok(Json(DashboardResponse {
 		display_name: user.display_name.to_owned(),
 		roles: user.roles,
-		is_pool_player: PoolPlayer::db_search_one("user", &user.id).await?.is_some(),
+		is_pool_player: PoolPlayer::db_search_one("user", user.uuid.clone())
+			.await?
+			.is_some(),
 	}))
 }

@@ -35,7 +35,7 @@ pub async fn pool_host(
 		.map(|user| PoolHostPageUser {
 			username: user.username,
 			display_name: user.display_name,
-			id: user.id.id().to_raw(),
+			id: user.uuid.uuid_string(),
 		})
 		.collect();
 
